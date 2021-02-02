@@ -14,9 +14,14 @@ library(tidyquant)  # for quant work and security data access
 #' ## AAPL as our example case
 #' 
 #' Use tidyqaunt to get price data from tiingo from 31 Dec 1999 through 31 Dec 2020
-aapl_pricing_table <- tq_get("AAPL", get = "tiingo", from = "1999-12-31", to = "2020-12-31")
+#' 
+aapl_pricing_table <- tq_get("AAPL", get = "tiingo", from = "1999-12-31", to = "2020-12-31") %>%
+    select(symbol, date, close, adjusted, divCash, splitFactor)
+    
 save_aapl_pricing_table <- aapl_pricing_table
 # aapl_pricing_table <- save_aapl_pricing_table
+#
+# use the above for later iterations to avoid repeat hits to tiingo
 
 #' AAPL has had 4 stock splits in that period
 #' 
@@ -38,52 +43,38 @@ aapl_pricing_table %>%
 
 #' New data items:
 #' 
-#'   daily divFactor which can be used to adjust returns for dividend impacts
-#'   
-#'   daily totFactor which accounts for splist and dividend impact in one factor (needed for total return)
-#'   
 #'   prcAdjFactor adjustment to close for any date so that it can be compared to any other adjusted close to get price return
 #'   
 #'   totAdjFactor adjustment to close for any date so that it can be compared to any other adjusted close to get total return
 #'   
-#'   prcReturn which is adjusted one day price return for that date
+#'   a few other values are left to make a proper check on adjusted price calculations - fields into the database table 
+#'   update routines would be (symbol, date, close, divCash, splitFactor, prcAdjFactor, totAdjFactor)
 #'   
-#'   totReturn which is adjusted one day total return for that date
 aapl_pricing_table <- aapl_pricing_table %>% 
+    group_by(symbol) %>% 
     arrange(desc(date)) %>% 
     mutate(
         divFactor = 1 + (divCash / close),
         totFactor = divFactor * splitFactor,
-        prcAdjFactor = cumprod(splitFactor),
-        totAdjFactor = cumprod(totFactor),
-        cTotAdjFactor = close / adjusted
+        splitAdjust = lag(splitFactor, 1),
+        totAdjust = lag(totFactor, 1),
+        splitAdjust = ifelse(is.na(splitAdjust), 1, splitAdjust),
+        totAdjust = ifelse(is.na(totAdjust), 1, totAdjust),
+        prcAdjFactor = cumprod(splitAdjust),
+        totAdjFactor = cumprod(totAdjust)
     ) %>% 
-    arrange(date)
+    arrange(date) %>% 
+    select(symbol, date, close, adjusted, divCash, splitFactor, prcAdjFactor, totAdjFactor) %>% 
+    ungroup()
 
-aapl_2020 <- aapl_pricing_table %>% 
-    filter(date >= '2019-12-31')
-
-View(filter(aapl_2020, month(date) %in% c(8, 9)))
-
-View(filter(aapl_2020, !near(adjusted, my_adjTot)))
-
-
-
-
-
-
-#' figure out what is wrong here
+#' these should match entirely
 #' 
 aapl_pricing_table %>% 
-    filter(date >= '2019-12-31') %>%
-    mutate(totReturn = 1 + totReturn) %>% 
-    select(totReturn) %>% 
-    prod()
+    filter(date > '1999-12-31') %>% 
+    mutate(my_adjusted = close / totAdjFactor) %>%
+    tq_transmute(my_adjusted, periodReturn, period = "yearly", col_rename = "return")
 
-
-#' figure out what is wrong here
-#' 
 aapl_pricing_table %>% 
-    filter(date >= '2019-12-31') %>%
+    filter(date > '1999-12-31') %>% 
     tq_transmute(adjusted, periodReturn, period = "yearly", col_rename = "return")
 
