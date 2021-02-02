@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS universe
     description TEXT
 );
 
+
 CREATE UNIQUE INDEX IF NOT EXISTS universe_name
 ON universe ( name );
 
