@@ -21,40 +21,28 @@ gics_tbl <- read_html(gics_url) %>%
         sub_industry_name = sub_industry_2
     )
 sct_tbl <- gics_tbl %>%
-    group_by(sector_code, sector_name) %>% 
-    count() %>% 
-    select(sector_code, sector_name) %>%
-    ungroup() %>% 
+    distinct(sector_code, sector_name) %>% 
     transmute(
         code = sector_code,
         level = "SCT",
         name = sector_name
     )
 igp_tbl <- gics_tbl %>%
-    group_by(industry_group_code, industry_group_name) %>% 
-    count() %>% 
-    select(industry_group_code, industry_group_name) %>%
-    ungroup() %>% 
+    distinct(industry_group_code, industry_group_name) %>% 
     transmute(
         code = industry_group_code,
         level = "IGP",
         name = industry_group_name
     )
 ind_tbl <- gics_tbl %>%
-    group_by(industry_code, industry_name) %>% 
-    count() %>% 
-    select(industry_code, industry_name) %>%
-    ungroup() %>% 
+    distinct(industry_code, industry_name) %>% 
     transmute(
         code = industry_code,
         level = "IND",
         name = industry_name
     )
 sub_tbl <- gics_tbl %>%
-    group_by(sub_industry_code, sub_industry_name) %>% 
-    count() %>% 
-    select(sub_industry_code, sub_industry_name) %>%
-    ungroup() %>% 
+    distinct(sub_industry_code, sub_industry_name) %>% 
     transmute(
         code = sub_industry_code,
         level = "SUB",
