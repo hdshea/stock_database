@@ -1,0 +1,210 @@
+---
+title: 'SQLite Basics Reference Notebook'
+author: "H. David Shea"
+date: 2021-02-04
+output:
+    github_document: default
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+    comment = "#>", 
+    collapse = TRUE, 
+    message = FALSE,
+    fig.width = 8,
+    fig.asp = ((1 + sqrt(5)) / 2) - 1, # the golden ratio - technically, the b proportion of a+b when a is 1
+    out.width = "70%",
+    fig.align = "center"
+)
+```
+
+## Introduction
+
+I am using our `SECDB` initial testing database for this notebook since it is the first one I have worked on.  The code in the notebook have dependencies on the `DBI` and `RSQLite` libraries.
+
+```{r load_dependencies}
+library(DBI)
+library(RSQLite)
+```
+
+Basics covered in this notebook are:
+
+* connecting to a database
+
+* investigating database structures
+
+* creating a table
+
+* loading data into table
+
+* querying data from tables
+
+* updating data in a table
+
+* deleting data from a table
+
+* dropping a table
+
+* disconnecting from a database
+
+We will employ a mix of `DBI` inherent data manipulation with built in functions and `SQL` statement pass through via `DBI` helper functions.
+
+## Connect to a database 
+
+The base `DBI` function `dbConnect` establishes a connection to an existing database. It requires a connection object to tell it about the type of database being connected and a file path to the physical database.  For our purposes, that is the default `SQLite` connection supplied in the package: `SQLite::SQLite()`.  Mostly for demonstration purposes, I first make a call to `dbCanConnect` which returns `TRUE` if it is possible to make the connection.
+
+```{r db_connection}
+base_dir <- here::here("")
+(db_file <- fs::path(base_dir, "SECDB"))
+
+if(dbCanConnect(RSQLite::SQLite(), db_file)) {
+    secdb <- dbConnect(RSQLite::SQLite(), db_file)
+}
+```
+
+## Investigating database structures
+
+One of the simplest thing to do in the database is list the existing tables.  That is accomplished by using the `DBI` base function `dbListTables`.
+
+```{r list_tables}
+dbListTables(secdb)
+```
+
+To get a list of the fields from specific table, use the `DBI` base function `dbListFields` supplying the table name of interest.
+
+```{r list_fields}
+dbListFields(secdb, "gics")
+```
+
+## Creating a table
+
+I am going to use data for the `gics` table which we saw in the list above for all examples in this notebook.  However, in order to demonstrate how to create a table, I will create a _temporary_ table - `gics_temp` - which looks exactly like the `gics` table for the actual work in the notebook.  Later on, we will manipulate data in this table - `INSERT`, `UPDATE` and `DELETE` - and then ultimately `DROP` the table for illustration as well.
+
+```{r stock_data_script, echo = FALSE}
+source(fs::path(base_dir, "stock_data_access.R"))
+```
+
+We have gics data (and other data) as pulled from wikipedia.  The data in the gics table are Global Industry Classification Standard (GICS®) data developed by MSCI and Standard & Poor's in 1999.  They establish a hierarchy of sector, industry group, industry and sub-industry classifications for a broad array of global stocks.
+
+The `stock_data_access.R` script within this project collects the various data mentioned above.  For the GICS data, the tibbles sct_tbl, igp_tbl, ind_tbl and sub_tbl contain data for GICS sectors, industry groups, industries and sub-industries, respectively.  They all have the same column structure.  I will use the sct_tbl as the defining structure for the `gics_temp` table creation.
+
+The built in `DBI` function `dbCreateTable` requires a database connection, a table name and a data frame with columns representing the structure required for the table.  It will use this information to `CREATE` the underlying table.
+
+```{r create_temp_table}
+dbCreateTable(secdb, "gics_temp", sct_tbl)
+
+dbExistsTable(secdb, "gics_temp")
+
+dbListFields(secdb, "gics_temp")
+```
+
+## Load data into tables
+
+Here I will load data into the just created and empty `gics_temp` table from the GICS data tibbles mentioned previously.
+
+These are straight forward inserts using the built in `DBI` functions to `INSERT` into a table.  In a subsequent notebook, I will look at some `INSERT`/`UPDATE` strategies for approaching some of the different table metaphors that we will employ in the `SECDB` schema.
+
+The base `DBI` function `dbWriteTable` requires a database connection, table name and a data frame with the data to `INSERT` into the table.  By default, the function assumes that the table does not exist and will `CREATE` it with column names from the data frame. By default, the overwrite and append parameters are set to `FALSE` and will cause the function to fail if the table already exists.  Here I want to display the functionality of `dbWriteTable` as well as `dbAppendTable` - which `INSERT`s data into an existing table - so I will use `dbWriteTable` with `overwrite = TRUE` on the initial `INSERT` (for sector data) and will use `dbAppendTable` for the subsequent `INSERT`s for the industry group, industry and sub-industry data.
+
+```{r load_gics_data}
+dbWriteTable(secdb, "gics_temp", sct_tbl, overwrite = TRUE)
+
+dbAppendTable(secdb, "gics_temp", igp_tbl)
+
+dbAppendTable(secdb, "gics_temp", ind_tbl)
+
+dbAppendTable(secdb, "gics_temp", sub_tbl)
+```
+
+Note that the `dbAppendTable` calls return the number of rows inserted into the table.
+
+## Select data from tables
+
+Now that we have some data in one of the `SECDB` tables, we can execute some queries to pull data into our R session.  Here I will use direct `SQL` statements (e.g., `SELECT* FROM gics_temp`) with the `DBI` help function set `dbSendQuery` - which executes the `SQL` `SELECT` statement within the database and returns a results reference object - and `dbFetch` which uses the results reference object to pull the `SQL` statement results back into the R session in a data frame.  Once finished with the results reference object, the `dbClearResults` function frees all resources (local and remote) associated with a result set - essential for good memory management.
+
+```{r select_data}
+res <- dbSendQuery(secdb, "SELECT * FROM gics_temp WHERE level = 'SCT'")
+dbFetch(res)
+dbClearResult(res)
+
+res <- dbSendQuery(secdb, "SELECT * FROM gics_temp WHERE level = 'IGP'")
+head(dbFetch(res), 10)
+dbClearResult(res)
+
+res <- dbSendQuery(secdb, "SELECT * FROM gics_temp WHERE level = 'IND'")
+head(dbFetch(res), 10)
+dbClearResult(res)
+
+res <- dbSendQuery(secdb, "SELECT * FROM gics WHERE level = 'SUB'")
+head(dbFetch(res), 10)
+dbClearResult(res)
+```
+
+## Updating data in a table
+
+Here, I demonstrate updating existing data within a table.  The `dbSendQuery` function is only appropriate for extracting data from the database via `SELECT` statements.  For all other data manipulation within the database via `SQL` statements (e.g., `UPDATE`, `DELETE`, `INSERT INTO`, `DROP TABLE`, etc.), `DBI` provides the `dbSendStatement` function.  This should be used in conjunction with the `dbHasCompleted` function which returns when/if the operation has completed.  Then a call to `dbGetRowsAffected` can be used to determine how many rows were affected by the `dbSendStatement` function.  As with `dbSendQuery`, when finished with the results reference object, a call to the `dbClearResults` function frees all resources (local and remote) associated with a result set - which is essential for good memory management.
+
+```{r update_data}
+res <- dbSendStatement(secdb, "UPDATE gics_temp SET code = code + 100 WHERE level = 'SCT'")
+if(dbHasCompleted(res)) {
+    dbGetRowsAffected(res)
+}
+dbClearResult(res)
+
+res <- dbSendQuery(secdb, "SELECT * FROM gics_temp WHERE level = 'SCT'")
+dbFetch(res)
+dbClearResult(res)
+
+res <- dbSendStatement(secdb, "UPDATE gics_temp SET code = code - 100 WHERE level = 'SCT'")
+if(dbHasCompleted(res)) {
+    dbGetRowsAffected(res)
+}
+dbClearResult(res)
+```
+
+## Deleting data from a table
+
+Here I demonstrate deleting data from a table.  The first `DELETE` statement removes selected rows from the table - specifically those `WHERE level = 'SCT'`.  The second `DELETE` statement removes all of the remaining data in the table - here, no `WHERE` clause is provided in the `DELETE` statement.  The same combination of `dbSendStatement`, `dbHasCompleted`, `dbGetRowsAffected` and `dbClearResult` as used in the `UPDATE` example are used here.
+
+```{r delete_data}
+res <- dbSendStatement(secdb, "DELETE FROM gics_temp WHERE level = 'SCT'")
+if(dbHasCompleted(res)) {
+    dbGetRowsAffected(res)
+}
+dbClearResult(res)
+
+res <- dbSendQuery(secdb, "SELECT * FROM gics_temp WHERE level = 'SCT'")
+dbFetch(res)
+dbClearResult(res)
+
+res <- dbSendStatement(secdb, "DELETE FROM gics_temp")
+if(dbHasCompleted(res)) {
+    dbGetRowsAffected(res)
+}
+dbClearResult(res)
+```
+
+## Dropping a table
+
+Now, we look at the `DROP TABLE` operation.  First, I check that there are no data in the gics_temp table - just to verify that the previous `DELETE` cleared all of the remianing data.  Then I use the `DBI` base `dbRemoveTable` function to `DROP` the table.  Note that the above combination of `SQL` statement execution for the `UPADTE` and `DELETE` examples could be used for the `DROP TABLE` execution as well.
+
+```{r drop_table}
+res <- dbSendQuery(secdb, "SELECT * FROM gics_temp")
+dbFetch(res)
+dbClearResult(res)
+
+dbExistsTable(secdb, "gics_temp")
+dbRemoveTable(secdb, "gics_temp")
+dbExistsTable(secdb, "gics_temp")
+
+dbListTables(secdb)
+```
+
+## Disconnecting from a database
+
+And finally, I will disconnect from the database.  The `dbDisconnect` function closes the connection, discards all pending work, and frees resources - again essential for good memory management.
+
+```{r db_disconnect}
+dbDisconnect(secdb)
+```
+
