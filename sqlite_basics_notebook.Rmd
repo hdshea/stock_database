@@ -51,7 +51,7 @@ We will employ a mix of `DBI` inherent data manipulation with built in functions
 
 ## Connect to a database 
 
-The base `DBI` function `dbConnect` establishes a connection to an existing database. It requires a connection object to tell it about the type of database being connected and a file path to the physical database.  For our purposes, that is the default `SQLite` connection supplied in the package: `SQLite::SQLite()`.  Mostly for demonstration purposes, I first make a call to `dbCanConnect` which returns `TRUE` if it is possible to make the connection.
+The base `DBI` function `dbConnect` establishes a connection to an existing database. It requires a connection object to tell it about the type of database being connected and a file path to the physical database.  For our purposes, that is the default `SQLite` connection supplied in the package: `RSQLite::SQLite()`.  Mostly for demonstration purposes, I first make a call to `dbCanConnect` which returns `TRUE` if it is possible to make the connection.
 
 ```{r db_connection}
 base_dir <- here::here("")
@@ -86,7 +86,7 @@ source(fs::path(base_dir, "stock_data_access.R"))
 
 We have gics data (and other data) as pulled from wikipedia.  The data in the gics table are Global Industry Classification Standard (GICS®) data developed by MSCI and Standard & Poor's in 1999.  They establish a hierarchy of sector, industry group, industry and sub-industry classifications for a broad array of global stocks.
 
-The `stock_data_access.R` script within this project collects the various data mentioned above.  For the GICS data, the tibbles sct_tbl, igp_tbl, ind_tbl and sub_tbl contain data for GICS sectors, industry groups, industries and sub-industries, respectively.  They all have the same column structure.  I will use the sct_tbl as the defining structure for the `gics_temp` table creation.
+The `stock_data_access.R` script within this project collects the various data mentioned above.  For the GICS data, the tibbles `sct_tbl`, `igp_tbl`, `ind_tbl` and `sub_tbl` contain data for GICS sectors, industry groups, industries and sub-industries, respectively.  They all have the same column structure.  I will use the `sct_tbl` as the defining structure for the `gics_temp` table creation.
 
 The built in `DBI` function `dbCreateTable` requires a database connection, a table name and a data frame with columns representing the structure required for the table.  It will use this information to `CREATE` the underlying table.
 
@@ -120,7 +120,7 @@ Note that the `dbAppendTable` calls return the number of rows inserted into the 
 
 ## Select data from tables
 
-Now that we have some data in one of the `SECDB` tables, we can execute some queries to pull data into our R session.  Here I will use direct `SQL` statements (e.g., `SELECT* FROM gics_temp`) with the `DBI` help function set `dbSendQuery` - which executes the `SQL` `SELECT` statement within the database and returns a results reference object - and `dbFetch` which uses the results reference object to pull the `SQL` statement results back into the R session in a data frame.  Once finished with the results reference object, the `dbClearResults` function frees all resources (local and remote) associated with a result set - essential for good memory management.
+Now that we have some data in one of the `SECDB` tables, we can execute some queries to pull data into our R session.  Here I will use direct `SQL` statements (e.g., `SELECT* FROM gics_temp`) with the `DBI` help function set `dbSendQuery` - which executes the `SQL` `SELECT` statement within the database and returns a *results reference object* - and `dbFetch` which uses the *results reference object* to pull the `SQL` statement results back into the R session in a data frame.  Once finished with the *results reference object*, the `dbClearResults` function frees all resources (local and remote) associated with a result set - essential for good memory management.
 
 ```{r select_data}
 res <- dbSendQuery(secdb, "SELECT * FROM gics_temp WHERE level = 'SCT'")
@@ -164,7 +164,7 @@ dbClearResult(res)
 
 ## Deleting data from a table
 
-Here I demonstrate deleting data from a table.  The first `DELETE` statement removes selected rows from the table - specifically those `WHERE level = 'SCT'`.  The second `DELETE` statement removes all of the remaining data in the table - here, no `WHERE` clause is provided in the `DELETE` statement.  The same combination of `dbSendStatement`, `dbHasCompleted`, `dbGetRowsAffected` and `dbClearResult` as used in the `UPDATE` example are used here.
+Here I demonstrate deleting data from a table.  The first `DELETE` statement removes selected rows from the table - specifically those `WHERE level = 'SCT'`.  The second `DELETE` statement removes all of the remaining data in the table - here, no `WHERE` clause is provided in the `DELETE` statement.  The same sequence of `dbSendStatement`, `dbHasCompleted`, `dbGetRowsAffected` and `dbClearResult` as used in the `UPDATE` example are used here.
 
 ```{r delete_data}
 res <- dbSendStatement(secdb, "DELETE FROM gics_temp WHERE level = 'SCT'")
@@ -186,7 +186,7 @@ dbClearResult(res)
 
 ## Dropping a table
 
-Now, we look at the `DROP TABLE` operation.  First, I check that there are no data in the gics_temp table - just to verify that the previous `DELETE` cleared all of the remianing data.  Then I use the `DBI` base `dbRemoveTable` function to `DROP` the table.  Note that the above combination of `SQL` statement execution for the `UPADTE` and `DELETE` examples could be used for the `DROP TABLE` execution as well.
+Now, we look at the `DROP TABLE` operation.  First, I check that there are no data in the `gics_temp` table - just to verify that the previous `DELETE` cleared all of the remaining data.  Then I use the `DBI` base `dbRemoveTable` function to `DROP` the table.  Note that the above combination of `SQL` statement execution for the `UPADTE` and `DELETE` examples could be used for the `DROP TABLE` execution as well.
 
 ```{r drop_table}
 res <- dbSendQuery(secdb, "SELECT * FROM gics_temp")
