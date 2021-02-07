@@ -135,7 +135,7 @@ res <- dbSendQuery(secdb, "SELECT * FROM gics_temp WHERE level = 'IND'")
 head(dbFetch(res), 10)
 dbClearResult(res)
 
-res <- dbSendQuery(secdb, "SELECT * FROM gics WHERE level = 'SUB'")
+res <- dbSendQuery(secdb, "SELECT * FROM gics_temp WHERE level = 'SUB'")
 head(dbFetch(res), 10)
 dbClearResult(res)
 ```
@@ -186,7 +186,7 @@ dbClearResult(res)
 
 ## Dropping a table
 
-Now, we look at the `DROP TABLE` operation.  First, I check that there are no data in the `gics_temp` table - just to verify that the previous `DELETE` cleared all of the remaining data.  Then I use the `DBI` base `dbRemoveTable` function to `DROP` the table.  Note that the above combination of `SQL` statement execution for the `UPADTE` and `DELETE` examples could be used for the `DROP TABLE` execution as well.
+Now, we look at the `DROP TABLE` operation.  First, I check that there are no data in the `gics_temp` table - just to verify that the previous `DELETE` cleared all of the remaining data.  Then I use the `DBI` base `dbRemoveTable` function to `DROP` the table.  Note that the above combination of `SQL` statement execution for the `UPDATE` and `DELETE` examples could be used for the `DROP TABLE` execution as well.
 
 ```{r drop_table}
 res <- dbSendQuery(secdb, "SELECT * FROM gics_temp")

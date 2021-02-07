@@ -43,7 +43,7 @@ The base `DBI` function `dbConnect` establishes a connection to an
 existing database. It requires a connection object to tell it about the
 type of database being connected and a file path to the physical
 database. For our purposes, that is the default `SQLite` connection
-supplied in the package: `SQLite::SQLite()`. Mostly for demonstration
+supplied in the package: `RSQLite::SQLite()`. Mostly for demonstration
 purposes, I first make a call to `dbCanConnect` which returns `TRUE` if
 it is possible to make the connection.
 
@@ -65,7 +65,8 @@ tables. That is accomplished by using the `DBI` base function
 
 ``` r
 dbListTables(secdb)
-#> [1] "gics"     "security" "universe"
+#> [1] "adjusted_price"       "gics"                 "security"            
+#> [4] "security_price"       "universe"             "universe_constituent"
 ```
 
 To get a list of the fields from specific table, use the `DBI` base
@@ -93,11 +94,11 @@ hierarchy of sector, industry group, industry and sub-industry
 classifications for a broad array of global stocks.
 
 The `stock_data_access.R` script within this project collects the
-various data mentioned above. For the GICS data, the tibbles sct\_tbl,
-igp\_tbl, ind\_tbl and sub\_tbl contain data for GICS sectors, industry
-groups, industries and sub-industries, respectively. They all have the
-same column structure. I will use the sct\_tbl as the defining structure
-for the `gics_temp` table creation.
+various data mentioned above. For the GICS data, the tibbles `sct_tbl`,
+`igp_tbl`, `ind_tbl` and `sub_tbl` contain data for GICS sectors,
+industry groups, industries and sub-industries, respectively. They all
+have the same column structure. I will use the `sct_tbl` as the defining
+structure for the `gics_temp` table creation.
 
 The built in `DBI` function `dbCreateTable` requires a database
 connection, a table name and a data frame with columns representing the
@@ -158,10 +159,10 @@ Now that we have some data in one of the `SECDB` tables, we can execute
 some queries to pull data into our R session. Here I will use direct
 `SQL` statements (e.g., `SELECT* FROM gics_temp`) with the `DBI` help
 function set `dbSendQuery` - which executes the `SQL` `SELECT` statement
-within the database and returns a results reference object - and
-`dbFetch` which uses the results reference object to pull the `SQL`
+within the database and returns a *results reference object* - and
+`dbFetch` which uses the *results reference object* to pull the `SQL`
 statement results back into the R session in a data frame. Once finished
-with the results reference object, the `dbClearResults` function frees
+with the *results reference object*, the `dbClearResults` function frees
 all resources (local and remote) associated with a result set -
 essential for good memory management.
 
@@ -212,7 +213,7 @@ head(dbFetch(res), 10)
 #> 10 201030   IND  Construction & Engineering
 dbClearResult(res)
 
-res <- dbSendQuery(secdb, "SELECT * FROM gics WHERE level = 'SUB'")
+res <- dbSendQuery(secdb, "SELECT * FROM gics_temp WHERE level = 'SUB'")
 head(dbFetch(res), 10)
 #>        code level                                 name
 #> 1  10101010   SUB                   Oil & Gas Drilling
@@ -282,7 +283,7 @@ Here I demonstrate deleting data from a table. The first `DELETE`
 statement removes selected rows from the table - specifically those
 `WHERE level = 'SCT'`. The second `DELETE` statement removes all of the
 remaining data in the table - here, no `WHERE` clause is provided in the
-`DELETE` statement. The same combination of `dbSendStatement`,
+`DELETE` statement. The same sequence of `dbSendStatement`,
 `dbHasCompleted`, `dbGetRowsAffected` and `dbClearResult` as used in the
 `UPDATE` example are used here.
 
@@ -311,10 +312,10 @@ dbClearResult(res)
 ## Dropping a table
 
 Now, we look at the `DROP TABLE` operation. First, I check that there
-are no data in the gics\_temp table - just to verify that the previous
-`DELETE` cleared all of the remianing data. Then I use the `DBI` base
+are no data in the `gics_temp` table - just to verify that the previous
+`DELETE` cleared all of the remaining data. Then I use the `DBI` base
 `dbRemoveTable` function to `DROP` the table. Note that the above
-combination of `SQL` statement execution for the `UPADTE` and `DELETE`
+combination of `SQL` statement execution for the `UPDATE` and `DELETE`
 examples could be used for the `DROP TABLE` execution as well.
 
 ``` r
@@ -331,7 +332,8 @@ dbExistsTable(secdb, "gics_temp")
 #> [1] FALSE
 
 dbListTables(secdb)
-#> [1] "gics"     "security" "universe"
+#> [1] "adjusted_price"       "gics"                 "security"            
+#> [4] "security_price"       "universe"             "universe_constituent"
 ```
 
 ## Disconnecting from a database

@@ -28,7 +28,7 @@ The impetus behind using table metaphors and sticking to them as strongly as pos
 
 ### Static definition table
 
-The first table metaphor is a simple static definition table.  These generally are tables of reference data that are constant through time.  The basic make up for these tables are:
+The first table metaphor is a simple static definition table.  These generally are tables of reference data that are constant through time.  The basic make up for these tables is:
 
 ```{SQL static_definition_table, eval = FALSE}
 CREATE TABLE IF NOT EXISTS <sd_table_name>
@@ -43,7 +43,7 @@ For static definition tables, we will default to having the single primary key f
 
 ### Time dependent definition table
 
-The next table metaphor is a time dependent definition table.  These are definition tables which can have the specific defining data ( the `...` in the definition following) change over time but where we want the identity of the basic element (the `uid` in the definition following) to be constant through time.  The basic make up for these tables are:
+The next table metaphor is a time dependent definition table.  These are definition tables which can have the specific defining data ( the `...` in the definition following) change over time but where we want the identity of the basic element (the `uid` in the definition following) to be constant through time.  The basic make up for these tables is:
 
 ```{SQL time_dependent_definition_table, eval = FALSE}
 CREATE TABLE IF NOT EXISTS <tdd_table_name>
@@ -74,7 +74,7 @@ As `9999-12-31 23:59:59` is the latest date recognized in `SQLite`, the current 
 
 ### Time series data table
 
-Time series data tables contain data for entities identified in a definition tables.  These will likely be the most common tables encountered in generally useful database tables - especially in finance and definitely in our SECDB example.  The basic make up for these tables are:
+Time series data tables contain data for entities identified in a definition tables.  These will likely be the most common tables encountered in generally useful database tables - especially in finance and definitely in our SECDB example.  The basic make up for these tables is:
 
 ```{SQL time_series_data_table, eval = FALSE}
 CREATE TABLE IF NOT EXISTS <tsd_table_name>
@@ -89,9 +89,9 @@ CREATE TABLE IF NOT EXISTS <tsd_table_name>
 
 In the `FOREIGN KEY`, the `<definition_table_name>` will refer to the static definition or time dependent definition table identifying the entity for which this time series is relevant.
 
-### Group constituent tables
+### Group constituent table
 
-Group constituent tables contain the time dependent constituents of a group.  These tables can either _only_ define the group constituents - in which case the `...` in the example below will be nothing - or they can define the group along with providing additional time dependent descriptive data - in which case the `...` in the example below will be additional fields.  Examples of the latter case include providing, for example, weightings or orderings for the constituents within the group.  The basic make up for these tables are:
+Group constituent tables contain the time dependent constituents of a group.  These tables can either _only_ define the group constituents - in which case the `...` in the example below will be nothing - or they can define the group along with providing additional time dependent descriptive data - in which case the `...` in the example below will be additional fields.  Examples of the latter case include providing weightings or orderings for the constituents within the group.  The basic make up for these tables is:
 
 ```{SQL group_constituent_table, eval = FALSE}
 CREATE TABLE IF NOT EXISTS <gs_table_name>
@@ -109,8 +109,7 @@ CREATE TABLE IF NOT EXISTS <gs_table_name>
 
 In the first `FOREIGN KEY`, the `<group_definition_table_name>` will refer to the static definition or time dependent definition
 table identifying the group entity in this relationship.  In the second `FOREIGN KEY`, the `<constituent_definition_table_name>`
-will refer to the static definition or time dependent definition table identifying the entity for which this time series is
-relevant.
+will refer to the static definition or time dependent definition table identifying the constituent entities in this relationship.
 
 Note that group constituent tables can be viewed as a special case of time dependent definition tables.  As such, the standard for
 date logic applied to time dependent definition tables carries over for these tables as well.
@@ -123,7 +122,7 @@ date logic applied to time dependent definition tables carries over for these ta
 
 ### Time series data table
 
-### Group constituent tables
+### Group constituent table
 
 
 ## Metaphor generalized R functions
@@ -134,4 +133,4 @@ date logic applied to time dependent definition tables carries over for these ta
 
 ### Time series data table
 
-### Group constituent tables
+### Group constituent table
