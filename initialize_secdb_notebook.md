@@ -273,6 +273,7 @@ function.
 ``` r
 sp500_tbl
 #> # A tibble: 505 x 6
+<<<<<<< HEAD
 #>      uid start_date end_date   symbol name                      sub_industry_co…
 #>    <int> <chr>      <chr>      <chr>  <chr>                                <int>
 #>  1     1 2021-02-09 9999-12-31 MMM    3M Company                        20105010
@@ -285,6 +286,20 @@ sp500_tbl
 #>  8     8 2021-02-09 9999-12-31 AMD    Advanced Micro Devices I…         45301020
 #>  9     9 2021-02-09 9999-12-31 AAP    Advance Auto Parts                25504050
 #> 10    10 2021-02-09 9999-12-31 AES    AES Corp                          55105010
+=======
+#>      uid start_date      end_date       symbol name             sub_industry_co…
+#>    <int> <chr>           <chr>          <chr>  <chr>                       <int>
+#>  1     1 2021-02-09 00:… 9999-12-31 23… MMM    3M Company               20105010
+#>  2     2 2021-02-09 00:… 9999-12-31 23… ABT    Abbott Laborato…         35101010
+#>  3     3 2021-02-09 00:… 9999-12-31 23… ABBV   AbbVie Inc.              35202010
+#>  4     4 2021-02-09 00:… 9999-12-31 23… ABMD   ABIOMED Inc              35101010
+#>  5     5 2021-02-09 00:… 9999-12-31 23… ACN    Accenture plc            45102010
+#>  6     6 2021-02-09 00:… 9999-12-31 23… ATVI   Activision Bliz…         50202020
+#>  7     7 2021-02-09 00:… 9999-12-31 23… ADBE   Adobe Inc.               45103010
+#>  8     8 2021-02-09 00:… 9999-12-31 23… AMD    Advanced Micro …         45301020
+#>  9     9 2021-02-09 00:… 9999-12-31 23… AAP    Advance Auto Pa…         25504050
+#> 10    10 2021-02-09 00:… 9999-12-31 23… AES    AES Corp                 55105010
+>>>>>>> ad4705ebf498b108d8a29a2ab218bfb6c1f62e06
 #> # … with 495 more rows
 ```
 
@@ -432,11 +447,16 @@ WHERE   U.name = 'SP500'
   AND   UC.end_date > DATE('now')
   AND   UC.security_uid = S.uid
   AND   S.start_date <= DATE('now')
+<<<<<<< HEAD
   AND   S.end_date > DATE('now');
+=======
+  AND   S.end_date > DATE('now')
+>>>>>>> ad4705ebf498b108d8a29a2ab218bfb6c1f62e06
 ```
 
 <div class="knitsql-table">
 
+<<<<<<< HEAD
 | uid | symbol | name                       | universe |
 |:----|:-------|:---------------------------|:---------|
 | 1   | MMM    | 3M Company                 | SP500    |
@@ -451,14 +471,27 @@ WHERE   U.name = 'SP500'
 | 10  | AES    | AES Corp                   | SP500    |
 
 Displaying records 1 - 10
+=======
+| uid | symbol | name | universe |
+|----:|:-------|:-----|:---------|
+
+0 records
+>>>>>>> ad4705ebf498b108d8a29a2ab218bfb6c1f62e06
 
 </div>
 
 ``` sql
+<<<<<<< HEAD
 SELECT  S.uid AS 'uid',
         S.symbol AS 'symbol',
         S.name AS 'name',
         U.name AS 'universe'
+=======
+SELECT  S.uid AS uid,
+        S.symbol AS symbol,
+        S.name AS name,
+        U.name AS universe
+>>>>>>> ad4705ebf498b108d8a29a2ab218bfb6c1f62e06
 FROM    universe U,
         universe_constituent UC,
         security S
@@ -468,11 +501,16 @@ WHERE   U.name = 'DJIA'
   AND   UC.end_date > DATE('now')
   AND   UC.security_uid = S.uid
   AND   S.start_date <= DATE('now')
+<<<<<<< HEAD
   AND   S.end_date > DATE('now');
+=======
+  AND   S.end_date > DATE('now')
+>>>>>>> ad4705ebf498b108d8a29a2ab218bfb6c1f62e06
 ```
 
 <div class="knitsql-table">
 
+<<<<<<< HEAD
 | uid | symbol | name                | universe |
 |----:|:-------|:--------------------|:---------|
 |   1 | MMM    | 3M Company          | DJIA     |
@@ -487,5 +525,11 @@ WHERE   U.name = 'DJIA'
 | 153 | DOW    | Dow Inc.            | DJIA     |
 
 Displaying records 1 - 10
+=======
+| uid | symbol | name | universe |
+|----:|:-------|:-----|:---------|
+
+0 records
+>>>>>>> ad4705ebf498b108d8a29a2ab218bfb6c1f62e06
 
 </div>

@@ -64,8 +64,13 @@ sp500_tbl <- read_html(sp500_url) %>%
     select(symbol, name, sub_industry_name, sub_industry_code) %>%
     transmute(
         uid = 1:n_distinct(symbol),
+<<<<<<< HEAD
         start_date = str_c(today(tz="UTC")),
         end_date = "9999-12-31",
+=======
+        start_date = str_c(today(tz="UTC")," 00:00:01"),
+        end_date = "9999-12-31 23:59:59",
+>>>>>>> ad4705ebf498b108d8a29a2ab218bfb6c1f62e06
         symbol = symbol,
         name = name,
         sub_industry_code = sub_industry_code
@@ -85,8 +90,13 @@ djia_tbl <- read_html(djia_url) %>%
     left_join(sp500_tbl, by = "symbol") %>%
     transmute(
         uid = uid,
+<<<<<<< HEAD
         start_date = str_c(today(tz="UTC")),
         end_date = "9999-12-31",
+=======
+        start_date = str_c(today(tz="UTC")," 00:00:01"),
+        end_date = "9999-12-31 23:59:59",
+>>>>>>> ad4705ebf498b108d8a29a2ab218bfb6c1f62e06
         symbol = symbol,
         name = name.y,
         sub_industry_code = sub_industry_code.y
