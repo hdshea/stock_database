@@ -61,15 +61,15 @@ CREATE TABLE IF NOT EXISTS <tdd_table_name>
 );
 ```
 
-The `start_date` of each entry will be `YYYY-MM-DD 00:00:01` for the
-date on which the definition was *first* relevant. The `end_date` will
-be `YYYY-MM-DD 00:00:01` for the date on which the definition was first
-***not*** relevant (i.e., one second after the date on which the
-definition was *last* relevant). The `end_date` of all current and still
-active definition entries will be set to `9999-12-31 23:59:59`.
-Adherence to these standard will allow the use of syntax as shown below
-for selecting entries relevant on a specific day, with the later example
-selecting all of the current and still active entries.
+The `start_date` of each entry will be `YYYY-MM-DD` for the date on
+which the definition was *first* relevant. The `end_date` will be
+`YYYY-MM-DD` for the date on which the definition was first ***not***
+relevant (i.e., one day after the date on which the definition was
+*last* relevant). The `end_date` of all current and still active
+definition entries will be set to `9999-12-31`. Adherence to these
+standard will allow the use of syntax as shown below for selecting
+entries relevant on a specific day, with the later example selecting all
+of the current and still active entries.
 
 ``` sql
 SELECT ...
@@ -83,8 +83,8 @@ WHERE start_date <= DATE('now')
   AND end_date > DATE('now')
 ```
 
-As `9999-12-31 23:59:59` is the latest date recognized in `SQLite`, the
-current and still active `end_date` standard allows the
+As `9999-12-31` is the latest date recognized in `SQLite`, the current
+and still active `end_date` standard allows the
 `start_date <= ... end_date > ...` `WHERE` clause form to avoid the need
 to special process the case where `end_date` is, say, `NULL` or to
 switch to `WHERE end_date = '9999-12-31'` to access current and still
@@ -113,7 +113,7 @@ In the `FOREIGN KEY`, the `<definition_table_name>` will refer to the
 static definition or time dependent definition table identifying the
 entity for which this time series is relevant.
 
-### Group constituent tables
+### Group constituent table
 
 Group constituent tables contain the time dependent constituents of a
 group. These tables can either *only* define the group constituents - in
@@ -158,7 +158,7 @@ tables as well.
 
 ### Time series data table
 
-### Group constituent tables
+### Group constituent table
 
 ## Metaphor generalized R functions
 
@@ -168,4 +168,4 @@ tables as well.
 
 ### Time series data table
 
-### Group constituent tables
+### Group constituent table

@@ -1,5 +1,6 @@
 library(tidyverse)  # for tidy/dplyr work
 library(rvest)      # for web-scraping
+library(lubridate)
 
 gics_url  <- "https://en.wikipedia.org/wiki/Global_Industry_Classification_Standard"
 sp500_url <- "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
@@ -60,7 +61,15 @@ sp500_tbl <- read_html(sp500_url) %>%
         sub_industry_name = gics_sub_industry
     ) %>%
     left_join(gics_tbl, by = "sub_industry_name") %>%
-    select(symbol, name, sub_industry_name, sub_industry_code)
+    select(symbol, name, sub_industry_name, sub_industry_code) %>%
+    transmute(
+        uid = 1:n_distinct(symbol),
+        start_date = str_c(today(tz="UTC")),
+        end_date = "9999-12-31",
+        symbol = symbol,
+        name = name,
+        sub_industry_code = sub_industry_code
+    )
 
 # data for DJIA constituent table
 djia_tbl <- read_html(djia_url) %>%
@@ -75,9 +84,11 @@ djia_tbl <- read_html(djia_url) %>%
     ) %>% 
     left_join(sp500_tbl, by = "symbol") %>%
     transmute(
+        uid = uid,
+        start_date = str_c(today(tz="UTC")),
+        end_date = "9999-12-31",
         symbol = symbol,
         name = name.y,
-        sub_industry_name = sub_industry_name.y,
         sub_industry_code = sub_industry_code.y
     )
 

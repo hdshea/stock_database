@@ -20,7 +20,7 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-I am using our `SECDB` initial testing database for this notebook since it is the first one I have worked on.  The code in the notebook have dependencies on the `DBI` and `RSQLite` libraries.
+I am using our `SECDB` initial testing database for this notebook since it is the first one I have worked on.  The R code in the notebook have dependencies on the `DBI` and `RSQLite` libraries.
 
 ```{r load_dependencies}
 library(DBI)

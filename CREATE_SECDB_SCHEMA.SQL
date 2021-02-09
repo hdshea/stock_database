@@ -1,5 +1,7 @@
 -- !preview conn=DBI::dbConnect(RSQLite::SQLite())
 
+.print "Creating SECDB schema objects..."
+
 -- universe table - defines universes of securities
 CREATE TABLE IF NOT EXISTS universe
 (
@@ -29,7 +31,8 @@ CREATE TABLE IF NOT EXISTS security
     symbol TEXT NOT NULL,
     name TEXT NOT NULL,
     sub_industry_code INTEGER,
-    PRIMARY KEY(uid, start_date)
+    PRIMARY KEY(uid, start_date),
+    FOREIGN KEY(sub_industry_code) REFERENCES gics(code)
 );
 CREATE UNIQUE INDEX IF NOT EXISTS security_symbol
 ON security ( symbol, start_date );
@@ -69,3 +72,4 @@ CREATE TABLE IF NOT EXISTS universe_constituent
     FOREIGN KEY(security_uid) REFERENCES security(uid)
 );
 
+.exit
