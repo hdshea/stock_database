@@ -225,17 +225,7 @@ WHERE   U.name = 'SP500'
   AND   UC.end_date > DATE('now')
   AND   UC.security_uid = S.uid
   AND   S.start_date <= DATE('now')
-<<<<<<< HEAD
   AND   S.end_date > DATE('now');
-```
-
-```{sql verify_djia_const}
-SELECT  S.uid AS 'uid',
-        S.symbol AS 'symbol',
-        S.name AS 'name',
-        U.name AS 'universe'
-=======
-  AND   S.end_date > DATE('now')
 ```
 
 ```{sql verify_djia_const}
@@ -243,7 +233,6 @@ SELECT  S.uid AS uid,
         S.symbol AS symbol,
         S.name AS name,
         U.name AS universe
->>>>>>> ad4705ebf498b108d8a29a2ab218bfb6c1f62e06
 FROM    universe U,
         universe_constituent UC,
         security S
@@ -253,9 +242,5 @@ WHERE   U.name = 'DJIA'
   AND   UC.end_date > DATE('now')
   AND   UC.security_uid = S.uid
   AND   S.start_date <= DATE('now')
-<<<<<<< HEAD
   AND   S.end_date > DATE('now');
-=======
-  AND   S.end_date > DATE('now')
->>>>>>> ad4705ebf498b108d8a29a2ab218bfb6c1f62e06
 ```
