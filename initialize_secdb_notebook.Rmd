@@ -32,21 +32,21 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-This notebook documents _**and**_ initializes the `SECDB` basic stock research database.  Only the definition and group constituent tables are initialized with the chunks processed in this database.  However, all tables are dropped and recreated when running the processing chunks.  The database is currently designed to store stock research data for the stocks in the Dow Jones Industrial Average (DJIA) and the S&P 500 Index (SP500).  Currently, the DJIA stocks are all completely contained within the SP500.  If that were to change in the future, some additional processing would be required.  This initialization procedure assumes that the initiation date (`start_date` in time dependent definition and group constituent tables) for all data in the SECDB database is _today_.
+This notebook documents **and** initializes the `SECDB` basic stock research database. Only the definition and group constituent tables are initialized with the chunks processed in this notebook. However, all tables are dropped and recreated when running the processing chunks. The database is currently designed to store stock research data for the stocks in the Dow Jones Industrial Average (DJIA) and the S&P 500 Index (SP500). Currently, the DJIA stocks are all completely contained within the SP500. If that were to change in the future, some additional processing would be required. This initialization procedure assumes that the initiation date (`start_date` in time dependent definition and group constituent tables) for all data in the SECDB database is *today*.
 
-Sidebar:  This notebook will also serve to document/experiment with mixing multiple execution engines within a single R Markdown document.  Specifically, I will use the `bash`, `sql`, and `r` engines in various processing chunks within this notebook.  One of the drawbacks that I have seen so far with chunks using the `sql` engine, is that only single `SQL` statements can be executed within the chunk.  So, when many `SQL` statements are _logically_ required together - for instance when dropping or recreating the entire schema - I have included the `SQL` statements in a script file and process them via the `SQLite` command within a `bash` engine chunk.
+Sidebar: This notebook will also serve to document/experiment with mixing multiple execution engines within a single R Markdown document. Specifically, I will use the `bash`, `sql`, and `r` engines in various processing chunks within this notebook. One of the drawbacks that I have seen so far with chunks using the `sql` engine, is that only single `SQL` statements can be executed within the chunk. So, when many `SQL` statements are *logically* required together - for instance when dropping or recreating the entire schema - I have included the `SQL` statements in a script file and process them via the `SQLite` command within a `bash` engine chunk.
 
 ## Recreate SECDB
 
 The next two code chunks process `SQL` scripts through the `sqlite3 SECDB` command via the `bash` engine.
 
-This chunk references `DROP_SECDB_SCHEMA.SQL` as input to drop all of the schema objects for `SECDB `.  Note that if the schema objects do not exist, you will see warning messages.  
+This chunk references `DROP_SECDB_SCHEMA.SQL` as input to drop all of the schema objects for `SECDB`. Note that if the schema objects do not exist, you will see warning messages.
 
 ```{bash drop_schema, echo = TRUE}
 sqlite3 SECDB < DROP_SECDB_SCHEMA.SQL
 ```
 
-This chunk references `CREATE_SECDB_SCHEMA.SQL` as input to create all of the schema objects for `SECDB `.
+This chunk references `CREATE_SECDB_SCHEMA.SQL` as input to create all of the schema objects for `SECDB`.
 
 ```{bash create_schema, echo = TRUE}
 sqlite3 SECDB < CREATE_SECDB_SCHEMA.SQL
@@ -60,15 +60,16 @@ dbListTables(secdb)
 
 ## Initialize base SECDB definition and group constituent tables
 
-As mentioned, the SECDB database is currently designed to store stock research data for the stocks in the Dow Jones Industrial Average (DJIA) and the S&P 500 Index (SP500).  The DJIA and the SP500 are identified as _stock universes_ in SECDB.  The `universe` table contains static definitions for all of the individual universe.
+As mentioned, the SECDB database is currently designed to store stock research data for the stocks in the Dow Jones Industrial Average (DJIA) and the S&P 500 Index (SP500). The DJIA and the SP500 are identified as *stock universes* in SECDB. The `universe` table contains static definitions for all of the individual universe.
 
-The following chunks are the raw `sql` code to initialize the instances of the DJIA and SP500 data within the `universe` table.  Note that these `INSERT` statements use the auto-populate primary key functionality in `SQLite` to fill in the `uid` fields with the next available sequential unique values allowed within the table.
+The following chunks are the raw `sql` code to initialize the instances of the DJIA and SP500 data within the `universe` table. Note that these `INSERT` statements use the auto-populate primary key functionality in `SQLite` to fill in the `uid` fields with the next available sequential unique values allowed within the table.
 
 ```{sql initialize_djia}
 INSERT
 INTO   universe( name, description )
 VALUES ( 'DJIA', 'Dow Jones Industrial Average' );
 ```
+
 ```{sql initialize_sp500}
 INSERT
 INTO   universe( name, description )
@@ -82,7 +83,7 @@ SELECT *
 FROM   universe;
 ```
 
-The other base data that we will populate within this notebook are populated with data sourced from wikipedia.  The `stock_data_access.R` script within this project collects the various data required by scraping various web pages.  These data include descriptive data for the securities in the DJIA and SP500, industry classification data for the securities, and the universe groupings for the DJIA and SP500 constituents.
+The other base data that we will populate within this notebook are populated with data sourced from wikipedia. The `stock_data_access.R` script within this project collects the various data required by scraping various web pages. These data include descriptive data for the securities in the DJIA and SP500, industry classification data for the securities, and the universe groupings for the DJIA and SP500 constituents.
 
 The script is sourced below so that the tibbles produced are available for loading into the appropriate base tables.
 
@@ -90,9 +91,9 @@ The script is sourced below so that the tibbles produced are available for loadi
 source(fs::path(base_dir, "stock_data_access.R"))
 ```
 
-The data in the gics table are Global Industry Classification Standard (GICS®) data developed by MSCI and Standard & Poor's in 1999.  They establish a hierarchy of sector, industry group, industry and sub-industry classifications for a broad array of global stocks.
+The data in the gics table are Global Industry Classification Standard (GICS®) data developed by MSCI and Standard & Poor's in 1999. They establish a hierarchy of sector, industry group, industry and sub-industry classifications for a broad array of global stocks.
 
-For the GICS data, the tibbles `sct_tbl`, `igp_tbl`, `ind_tbl` and `sub_tbl` contain data for GICS sectors, industry groups, industries and sub-industries, respectively.  They all have the same column structure.  The following `r` chunk uses the base `DBI` function `dbAppendTable` to `INSERT` the data from the four tibbles.
+For the GICS data, the tibbles `sct_tbl`, `igp_tbl`, `ind_tbl` and `sub_tbl` contain data for GICS sectors, industry groups, industries and sub-industries, respectively. They all have the same column structure. The following `r` chunk uses the base `DBI` function `dbAppendTable` to `INSERT` the data from the four tibbles.
 
 ```{r load_gics_data}
 dbAppendTable(secdb, "gics", sct_tbl)
@@ -104,34 +105,39 @@ dbAppendTable(secdb, "gics", ind_tbl)
 dbAppendTable(secdb, "gics", sub_tbl)
 ```
 
-Note that the `dbAppendTable` calls return the number of rows inserted into the table for each call.  And, we can check with the following raw `sql` chunks to verify that the data are loaded correctly. 
+Note that the `dbAppendTable` calls return the number of rows inserted into the table for each call. And, we can check with the following raw `sql` chunks to verify that the data are loaded correctly.
 
 ```{sql sct_select}
 SELECT *
 FROM   gics
 WHERE  level = 'SCT';
 ```
+
 ```{sql igp_select}
 SELECT * 
 FROM   gics
 WHERE  level = 'IGP';
 ```
+
 ```{sql ind_select}
 SELECT * 
 FROM   gics
 WHERE  level = 'IND';
 ```
+
 ```{sql sub_select}
 SELECT *
 FROM   gics
 WHERE  level = 'SUB';
 ```
 
-Note that for `sql` chunks, the default in R Markdown is to display the first 10 records returned by `SELECT` statements in a document.  This can be changed with the chunk option `max.print` which can be set equal to a specific number ro to no limit by using `max.print = -1` or `max.print = NA`.
+Note that for `sql` chunks, the default in R Markdown is to display the first 10 records returned by `SELECT` statements in a document. This can be changed with the chunk option `max.print` which can be set equal to a specific number ro to no limit by using `max.print = -1` or `max.print = NA`.
 
-For descriptive security data, the above script pulled data for the S&P 500 index constituents and the Dow Jones Industrial Average constituents.  As mentioned in the introduction, all of the DJIA stocks are contained within the SP500 stocks.  As such, only the SP500 descriptive data will be used to initialize the `security` table.
+For descriptive security data, the above script pulled data for the S&P 500 index constituents and the Dow Jones Industrial Average constituents. As mentioned in the introduction, all of the DJIA stocks are contained within the SP500 stocks. As such, only the SP500 descriptive data will be used to initialize the `security` table.
 
-For the SP500 data are contained in the tibble `SP500_tbl`.  For the initialization, the sourced file above assumed that the `security` table was empty and created `uid` values explicitly.  This is actually required because the auto-populate primary key functionality in `SQLite` only works when there is a single integer field primary key.  The primary key for the `security` table references the `uid` and the `start_date` fields.
+Data for the SP500 are contained in the tibble `SP500_tbl`. For the initialization, the sourced file above assumed that the `security` table was empty and created `uid` values explicitly. This is actually required because the auto-populate primary key functionality in `SQLite` only works when there is a single integer field primary key. The primary key for the `security` table references the `uid` and the `start_date` fields.
+
+*[TODO: discuss strategy for future insertions]*
 
 The data in the `sp500_tbl` mimic the tables structure for the `security` table which is required in order to use the `dbAppendTable` function.
 
@@ -160,20 +166,24 @@ WHERE  gics.level = 'SCT'
   AND  gics.code = SUBSTR(security.sub_industry_code,1,2);
 ```
 
-The final pieces of data to initialize in the `SECDB` are the group constituent data for the DJIA and SP500 stocks.  These data are maintained in the `universe_constituent` table in the `SECDB`.
+The final pieces of data to initialize in the `SECDB` are the group constituent data for the DJIA and SP500 stocks. These data are maintained in the `universe_constituent` table in the `SECDB`.
 
-The following raw `sql` chunk displays a _poorly documented_ technique for investigating the makeup of a `SQLite` schema object.  Each `SQLite` database has a _hidden_ table named `sqlite_schema` which contains information about the makeup of the objects in the schema.  The `name` field identifies the object and the `sql` field shows the `SQL` statement that was executed to create the object.  (N.B., There are easier - maybe better - ways to accomplish what the next two chunks accomplish, but this is an opportunity to show the interplay functionality between the different processing chunks - even with different engines - within R Markdown.)
+The following raw `sql` chunk displays a *poorly documented* technique for investigating the makeup of a `SQLite` schema object. Each `SQLite` database has a *hidden* table named `sqlite_schema` which contains information about the makeup of the objects in the schema. The `name` field identifies the object and the `sql` field shows the `SQL` statement that was executed to create the object. (N.B., There are easier - maybe better - ways to accomplish what the next two chunks accomplish, but this is an opportunity to show the interplay functionality between the different processing chunks - even with different engines - within R Markdown.)
+
+*[Note: BCF couldn't get this to run in the sqlite3 terminal. Wondering why
+it works here....]*
 
 ```{sql query_sqlite_schema, output.var = "sql_string"}
 SELECT  sql
 FROM    sqlite_schema
 WHERE   name = 'universe_constituent';
 ```
+
 ```{r pretty_print_results, echo = FALSE, comment = ""}
 cat(sql_string$sql)
 ```
 
-Note that most of the data we need to initialize the `universe_constituent` table for both the DJIA and the SP500 are contained in the tibbles that we sourced previously - `djia_tbl` and `sp500_tbl`, respectively.  The missing data items are the `uid` value for each of the universes.
+Note that most of the data we need to initialize the `universe_constituent` table for both the DJIA and the SP500 are contained in the tibbles that we sourced previously - `djia_tbl` and `sp500_tbl`, respectively. The missing data items are the `uid` value for each of the universes.
 
 The following code chunks use raw `sql` to access the `universe` data (and make that data available via `universe_tbl`) and then `r` to join the `universe` data with the DJIA and SP500 data and appropraite load the `universe_constituent` table.
 
@@ -182,6 +192,7 @@ SELECT  uid, name
 FROM    universe
 WHERE   name in ('DJIA', 'SP500');
 ```
+
 ```{r uc_data_prep}
 universe_tbl <- tibble::tibble(universe_tbl)
 

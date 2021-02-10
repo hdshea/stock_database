@@ -5,9 +5,9 @@ H. David Shea
 
 ## Introduction
 
-This notebook documents ***and*** initializes the `SECDB` basic stock
+This notebook documents **and** initializes the `SECDB` basic stock
 research database. Only the definition and group constituent tables are
-initialized with the chunks processed in this database. However, all
+initialized with the chunks processed in this notebook. However, all
 tables are dropped and recreated when running the processing chunks. The
 database is currently designed to store stock research data for the
 stocks in the Dow Jones Industrial Average (DJIA) and the S&P 500 Index
@@ -258,13 +258,15 @@ constituents. As mentioned in the introduction, all of the DJIA stocks
 are contained within the SP500 stocks. As such, only the SP500
 descriptive data will be used to initialize the `security` table.
 
-For the SP500 data are contained in the tibble `SP500_tbl`. For the
+Data for the SP500 are contained in the tibble `SP500_tbl`. For the
 initialization, the sourced file above assumed that the `security` table
 was empty and created `uid` values explicitly. This is actually required
 because the auto-populate primary key functionality in `SQLite` only
 works when there is a single integer field primary key. The primary key
 for the `security` table references the `uid` and the `start_date`
 fields.
+
+*\[TODO: discuss strategy for future insertions\]*
 
 The data in the `sp500_tbl` mimic the tables structure for the
 `security` table which is required in order to use the `dbAppendTable`
@@ -275,16 +277,16 @@ sp500_tbl
 #> # A tibble: 505 x 6
 #>      uid start_date end_date   symbol name                      sub_industry_co…
 #>    <int> <chr>      <chr>      <chr>  <chr>                                <int>
-#>  1     1 2021-02-09 9999-12-31 MMM    3M Company                        20105010
-#>  2     2 2021-02-09 9999-12-31 ABT    Abbott Laboratories               35101010
-#>  3     3 2021-02-09 9999-12-31 ABBV   AbbVie Inc.                       35202010
-#>  4     4 2021-02-09 9999-12-31 ABMD   ABIOMED Inc                       35101010
-#>  5     5 2021-02-09 9999-12-31 ACN    Accenture plc                     45102010
-#>  6     6 2021-02-09 9999-12-31 ATVI   Activision Blizzard               50202020
-#>  7     7 2021-02-09 9999-12-31 ADBE   Adobe Inc.                        45103010
-#>  8     8 2021-02-09 9999-12-31 AMD    Advanced Micro Devices I…         45301020
-#>  9     9 2021-02-09 9999-12-31 AAP    Advance Auto Parts                25504050
-#> 10    10 2021-02-09 9999-12-31 AES    AES Corp                          55105010
+#>  1     1 2021-02-10 9999-12-31 MMM    3M Company                        20105010
+#>  2     2 2021-02-10 9999-12-31 ABT    Abbott Laboratories               35101010
+#>  3     3 2021-02-10 9999-12-31 ABBV   AbbVie Inc.                       35202010
+#>  4     4 2021-02-10 9999-12-31 ABMD   ABIOMED Inc                       35101010
+#>  5     5 2021-02-10 9999-12-31 ACN    Accenture plc                     45102010
+#>  6     6 2021-02-10 9999-12-31 ATVI   Activision Blizzard               50202020
+#>  7     7 2021-02-10 9999-12-31 ADBE   Adobe Inc.                        45103010
+#>  8     8 2021-02-10 9999-12-31 AMD    Advanced Micro Devices I…         45301020
+#>  9     9 2021-02-10 9999-12-31 AAP    Advance Auto Parts                25504050
+#> 10    10 2021-02-10 9999-12-31 AES    AES Corp                          55105010
 #> # … with 495 more rows
 ```
 
@@ -322,16 +324,16 @@ WHERE  gics.level = 'SCT'
 
 | uid | start\_date | end\_date  | symbol | name                       | sector                 |
 |:----|:------------|:-----------|:-------|:---------------------------|:-----------------------|
-| 1   | 2021-02-09  | 9999-12-31 | MMM    | 3M Company                 | Industrials            |
-| 2   | 2021-02-09  | 9999-12-31 | ABT    | Abbott Laboratories        | Health Care            |
-| 3   | 2021-02-09  | 9999-12-31 | ABBV   | AbbVie Inc.                | Health Care            |
-| 4   | 2021-02-09  | 9999-12-31 | ABMD   | ABIOMED Inc                | Health Care            |
-| 5   | 2021-02-09  | 9999-12-31 | ACN    | Accenture plc              | Information Technology |
-| 6   | 2021-02-09  | 9999-12-31 | ATVI   | Activision Blizzard        | Communication Services |
-| 7   | 2021-02-09  | 9999-12-31 | ADBE   | Adobe Inc.                 | Information Technology |
-| 8   | 2021-02-09  | 9999-12-31 | AMD    | Advanced Micro Devices Inc | Information Technology |
-| 9   | 2021-02-09  | 9999-12-31 | AAP    | Advance Auto Parts         | Consumer Discretionary |
-| 10  | 2021-02-09  | 9999-12-31 | AES    | AES Corp                   | Utilities              |
+| 1   | 2021-02-10  | 9999-12-31 | MMM    | 3M Company                 | Industrials            |
+| 2   | 2021-02-10  | 9999-12-31 | ABT    | Abbott Laboratories        | Health Care            |
+| 3   | 2021-02-10  | 9999-12-31 | ABBV   | AbbVie Inc.                | Health Care            |
+| 4   | 2021-02-10  | 9999-12-31 | ABMD   | ABIOMED Inc                | Health Care            |
+| 5   | 2021-02-10  | 9999-12-31 | ACN    | Accenture plc              | Information Technology |
+| 6   | 2021-02-10  | 9999-12-31 | ATVI   | Activision Blizzard        | Communication Services |
+| 7   | 2021-02-10  | 9999-12-31 | ADBE   | Adobe Inc.                 | Information Technology |
+| 8   | 2021-02-10  | 9999-12-31 | AMD    | Advanced Micro Devices Inc | Information Technology |
+| 9   | 2021-02-10  | 9999-12-31 | AAP    | Advance Auto Parts         | Consumer Discretionary |
+| 10  | 2021-02-10  | 9999-12-31 | AES    | AES Corp                   | Utilities              |
 
 Displaying records 1 - 10
 
@@ -351,6 +353,9 @@ easier - maybe better - ways to accomplish what the next two chunks
 accomplish, but this is an opportunity to show the interplay
 functionality between the different processing chunks - even with
 different engines - within R Markdown.)
+
+*\[Note: BCF couldn’t get this to run in the sqlite3 terminal. Wondering
+why it works here….\]*
 
 ``` sql
 SELECT  sql
