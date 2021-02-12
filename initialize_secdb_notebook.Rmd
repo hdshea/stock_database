@@ -255,3 +255,7 @@ WHERE   U.name = 'DJIA'
   AND   S.start_date <= DATE('now')
   AND   S.end_date > DATE('now');
 ```
+
+```{r db_disconnect, include = FALSE}
+dbDisconnect(secdb)
+```

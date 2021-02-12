@@ -1,5 +1,5 @@
 #' ---
-#' title: "Initializing Stock Database with 5 Years of Data"
+#' title: "Initializing Stock Database with 20+ Years of Data"
 #' author: "H. David Shea"
 #' date: "11 February 2021"
 #' output: github_document
@@ -32,7 +32,11 @@ dbSelectData <- function( con, select_statement ) {
     rval
 }
 
-#' SELECT all security data from 
+#' SELECT all security data from SECDB
+#' 
+#' This currently pulls data for the 500+ stocks in the SP500 and DJIA.
+#' Executing this notebook assumes that you have a POWER license for tiingo with 
+#' the ability to access this much data in a single pass.
 #' 
 sql <- "SELECT  uid,
         symbol,
@@ -42,199 +46,69 @@ WHERE   start_date <= DATE('now')
   AND   end_date > DATE('now')"
 all_stocks <- dbSelectData(secdb, sql)
 
-#' Test with first 100 uid
-#' 
 symbols <- all_stocks %>% 
-    filter( between( uid, 1, 100) ) %>% 
     pull( symbol ) %>% 
-    str_replace("\\.", "\\-" )
+    str_replace("\\.", "\\-" ) # wiki has B share tickers in this form stk.B, tiingo wants them in this for stk-B
 
-pricing_table <- tq_get(symbols, get = "tiingo", from = "1999-12-31", to = "2020-12-31") %>%
-    select(symbol, date, close, adjusted, divCash, splitFactor)
-
-save_pricing_table <- pricing_table
-# pricing_table <- save_pricing_table
-
-#' This iteration had errors on tq_get for BRK.B and BF.B - investigated appropriate notation for class B stock symbols.
-#' The answer is that tiingo expects BRK-B and BF-B, so added the str_replace at the end of the pipe
-#' 
-
-adJ_pricing_table <- pricing_table %>% 
-    group_by(symbol) %>% 
-    arrange(desc(date)) %>% 
-    mutate(
-        divFactor = 1 + (divCash / close),
-        totFactor = divFactor * splitFactor,
-        splitAdjust = lag(splitFactor, 1),
-        totAdjust = lag(totFactor, 1),
-        splitAdjust = ifelse(is.na(splitAdjust), 1, splitAdjust),
-        totAdjust = ifelse(is.na(totAdjust), 1, totAdjust),
-        prcAdjFactor = cumprod(splitAdjust),
-        totAdjFactor = cumprod(totAdjust)
-    ) %>% 
-    arrange(date) %>% 
-    select(symbol, date, close, adjusted, divCash, splitFactor, prcAdjFactor, totAdjFactor) %>% 
-    ungroup()
+pricing_table <- tq_get(symbols, get = "tiingo", from = "1998-12-31", to = "2021-01-31") %>% 
+  mutate( symbol = str_replace(symbol, "\\-", "\\." ) )
 
 write_csv(pricing_table, fs::path(base_dir, "data", "pricing_table.csv"))
+
+#' Saving all of the the pulled data to a data file for later use if necessary just for convenience.
+#' The tq_get on 20+ years of >500 securities takes awhile to complete.
+#' 
+
+#' Now create the data structure to populate security_price
+#' 
+adJ_pricing_table <- pricing_table %>% 
+  left_join(all_stocks, by = "symbol") %>% 
+  select(uid, date, close, volume, divCash, splitFactor, adjusted) %>% 
+  group_by(uid) %>% 
+  arrange(desc(date)) %>% 
+  mutate(
+    divFactor = 1 + (divCash / close),
+    totFactor = divFactor * splitFactor,
+    splitAdjust = lag(splitFactor, 1),
+    totAdjust = lag(totFactor, 1),
+    splitAdjust = ifelse(is.na(splitAdjust), 1, splitAdjust),
+    totAdjust = ifelse(is.na(totAdjust), 1, totAdjust),
+    prcAdjFactor = cumprod(splitAdjust),
+    totAdjFactor = cumprod(totAdjust)
+    ) %>% 
+  arrange(date) %>% 
+  mutate(
+    prcReturn = 100 * (((close / prcAdjFactor) / (lag(close, 1) / lag(prcAdjFactor, 1))) - 1),
+    totReturn = 100 * (((close / totAdjFactor) / (lag(close, 1) / lag(totAdjFactor, 1))) - 1)
+  ) %>% 
+  transmute(
+    uid = uid, 
+    effective_date = str_c(date), 
+    closing_price = close, 
+    volume = volume,
+    price_return = prcReturn,
+    total_return = totReturn,
+    price_return_factor = prcAdjFactor,
+    total_return_factor = totAdjFactor,
+    dividend = divCash,
+    split_factor = splitFactor
+  ) %>% 
+  ungroup()
+
 write_csv(adJ_pricing_table, fs::path(base_dir, "data", "adj_pricing_table.csv"))
 
-#' Now the next 100 uid
-#' 
-symbols <- all_stocks %>% 
-    filter( between( uid, 201, 300) ) %>% 
-    pull( symbol ) %>% 
-    str_replace("\\.", "\\-" )
-
-pricing_table <- tq_get(symbols, get = "tiingo", from = "1999-12-31", to = "2020-12-31") %>%
-    select(symbol, date, close, adjusted, divCash, splitFactor)
-
-save_pricing_table <- pricing_table
-# pricing_table <- save_pricing_table
-
-#' This iteration had no errors on tq_get - but also had no tickers in X.B format
+#' Saving all of the the adjusted data to a data file for later use if necessary just for convenience.
+#' Even though the adjustment calculations on 20+ years of >500 securities are pretty fast.
 #' 
 
-adJ_pricing_table <- pricing_table %>% 
-    group_by(symbol) %>% 
-    arrange(desc(date)) %>% 
-    mutate(
-        divFactor = 1 + (divCash / close),
-        totFactor = divFactor * splitFactor,
-        splitAdjust = lag(splitFactor, 1),
-        totAdjust = lag(totFactor, 1),
-        splitAdjust = ifelse(is.na(splitAdjust), 1, splitAdjust),
-        totAdjust = ifelse(is.na(totAdjust), 1, totAdjust),
-        prcAdjFactor = cumprod(splitAdjust),
-        totAdjFactor = cumprod(totAdjust)
-    ) %>% 
-    arrange(date) %>% 
-    select(symbol, date, close, adjusted, divCash, splitFactor, prcAdjFactor, totAdjFactor) %>% 
-    ungroup()
-
-write_csv(pricing_table, fs::path(base_dir, "data", "pricing_table.csv"), append = TRUE)
-write_csv(adJ_pricing_table, fs::path(base_dir, "data", "adj_pricing_table.csv"), append = TRUE)
-
-#' Now the next 100 uid
+#' Now, wholesale insert adj_price_table data into security_price
 #' 
-symbols <- all_stocks %>% 
-    filter( between( uid, 301, 400) ) %>% 
-    pull( symbol ) %>% 
-    str_replace("\\.", "\\-" )
-
-pricing_table <- tq_get(symbols, get = "tiingo", from = "1999-12-31", to = "2020-12-31") %>%
-    select(symbol, date, close, adjusted, divCash, splitFactor)
-
-save_pricing_table <- pricing_table
-# pricing_table <- save_pricing_table
-
-#' This iteration had no errors on tq_get - but also had no tickers in X.B format
+#' Note the conversion in the last transmute above to appropriately named and ordered fields to match the table definition.
+#' Also note the conversion of the dttm formatted date field to the character formatted effective_date field.  SQLite does some
+#' odd conversion on dttm formats.
 #' 
+dbAppendTable(secdb, "security_price", adJ_pricing_table)
 
-adJ_pricing_table <- pricing_table %>% 
-    group_by(symbol) %>% 
-    arrange(desc(date)) %>% 
-    mutate(
-        divFactor = 1 + (divCash / close),
-        totFactor = divFactor * splitFactor,
-        splitAdjust = lag(splitFactor, 1),
-        totAdjust = lag(totFactor, 1),
-        splitAdjust = ifelse(is.na(splitAdjust), 1, splitAdjust),
-        totAdjust = ifelse(is.na(totAdjust), 1, totAdjust),
-        prcAdjFactor = cumprod(splitAdjust),
-        totAdjFactor = cumprod(totAdjust)
-    ) %>% 
-    arrange(date) %>% 
-    select(symbol, date, close, adjusted, divCash, splitFactor, prcAdjFactor, totAdjFactor) %>% 
-    ungroup()
-
-write_csv(pricing_table, fs::path(base_dir, "data", "pricing_table.csv"), append = TRUE)
-write_csv(adJ_pricing_table, fs::path(base_dir, "data", "adj_pricing_table.csv"), append = TRUE)
-
-#' Now the next 100 uid
+#' Wrap up by disconnecting from database
 #' 
-symbols <- all_stocks %>% 
-    filter( between( uid, 401, 500) ) %>% 
-    pull( symbol ) %>% 
-    str_replace("\\.", "\\-" )
-
-pricing_table <- tq_get(symbols, get = "tiingo", from = "1999-12-31", to = "2020-12-31") %>%
-    select(symbol, date, close, adjusted, divCash, splitFactor)
-
-save_pricing_table <- pricing_table
-# pricing_table <- save_pricing_table
-
-#' This iteration had no errors on tq_get - but also had no tickers in X.B format
-#' 
-
-adJ_pricing_table <- pricing_table %>% 
-    group_by(symbol) %>% 
-    arrange(desc(date)) %>% 
-    mutate(
-        divFactor = 1 + (divCash / close),
-        totFactor = divFactor * splitFactor,
-        splitAdjust = lag(splitFactor, 1),
-        totAdjust = lag(totFactor, 1),
-        splitAdjust = ifelse(is.na(splitAdjust), 1, splitAdjust),
-        totAdjust = ifelse(is.na(totAdjust), 1, totAdjust),
-        prcAdjFactor = cumprod(splitAdjust),
-        totAdjFactor = cumprod(totAdjust)
-    ) %>% 
-    arrange(date) %>% 
-    select(symbol, date, close, adjusted, divCash, splitFactor, prcAdjFactor, totAdjFactor) %>% 
-    ungroup()
-
-write_csv(pricing_table, fs::path(base_dir, "data", "pricing_table.csv"), append = TRUE)
-write_csv(adJ_pricing_table, fs::path(base_dir, "data", "adj_pricing_table.csv"), append = TRUE)
-
-#' Now the remaining
-#' 
-symbols <- all_stocks %>% 
-    filter( between( uid, 501, 600) ) %>% 
-    pull( symbol ) %>% 
-    str_replace("\\.", "\\-" )
-
-#' add on BRK-B and BF-B - which shouldn't be required in the future
-#' 
-symbols <- c( symbols, "BRK-B", "BF-B" )
-#' Lo and behold, this resulted in:
-#' 
-#' Warning messages:
-#' 1: Download failure with ZBRA, removing. See full message below:
-#'     lexical error: invalid char in json text.
-#'     You have run over your 500 symb
-#'     (right here) ------^
-#'     
-#' Exactly at 500 tickers ... good to know.  Will process these later
-#' 
-
-
-pricing_table <- tq_get(symbols, get = "tiingo", from = "1999-12-31", to = "2020-12-31") %>%
-    select(symbol, date, close, adjusted, divCash, splitFactor)
-
-save_pricing_table <- pricing_table
-# pricing_table <- save_pricing_table
-
-#' This iteration had no errors on tq_get - but also had no tickers in X.B format
-#' 
-
-adJ_pricing_table <- pricing_table %>% 
-    group_by(symbol) %>% 
-    arrange(desc(date)) %>% 
-    mutate(
-        divFactor = 1 + (divCash / close),
-        totFactor = divFactor * splitFactor,
-        splitAdjust = lag(splitFactor, 1),
-        totAdjust = lag(totFactor, 1),
-        splitAdjust = ifelse(is.na(splitAdjust), 1, splitAdjust),
-        totAdjust = ifelse(is.na(totAdjust), 1, totAdjust),
-        prcAdjFactor = cumprod(splitAdjust),
-        totAdjFactor = cumprod(totAdjust)
-    ) %>% 
-    arrange(date) %>% 
-    select(symbol, date, close, adjusted, divCash, splitFactor, prcAdjFactor, totAdjFactor) %>% 
-    ungroup()
-
-write_csv(pricing_table, fs::path(base_dir, "data", "pricing_table.csv"), append = TRUE)
-write_csv(adJ_pricing_table, fs::path(base_dir, "data", "adj_pricing_table.csv"), append = TRUE)
-
+dbDisconnect(secdb)

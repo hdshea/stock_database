@@ -42,22 +42,32 @@ CREATE TABLE IF NOT EXISTS security_price
 (
     uid INTEGER NOT NULL,
     effective_date DATE NOT NULL,
-    closing_price DOUBLE NOT NULL,
-    price_return_factor DOUBLE NOT NULL,
-    total_return_factor DOUBLE NOT NULL,
-    dividend DOUBLE NOT NULL,
-    split_factor DOUBLE NOT NULL,
+    closing_price DOUBLE,
+    volume DOUBLE, 
+    price_return DOUBLE,
+    total_return DOUBLE,
+    price_return_factor DOUBLE,
+    total_return_factor DOUBLE,
+    dividend DOUBLE,
+    split_factor DOUBLE,
     PRIMARY KEY(uid, effective_date),
     FOREIGN KEY(uid) REFERENCES security(uid)
 );
+CREATE INDEX IF NOT EXISTS security_price_effective_date
+ON security_price ( effective_date );
+
 -- adjusted price view - enforces calculation of adjusted_price and adjusted_price_pret
 CREATE VIEW adjusted_price
 AS
 SELECT  uid,
         effective_date,
         closing_price,
+        volume,
         closing_price / total_return_factor AS adjusted_price,
-        closing_price / price_return_factor AS adjusted_price_pret
+        closing_price / price_return_factor AS adjusted_price_pret,
+        volume * price_return_factor AS adjusted_volume,
+        price_return,
+        total_return
 FROM    security_price;
 
 -- universe_constituent table - defines the elements (securities) of the universe as they may change through time
