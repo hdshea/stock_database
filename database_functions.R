@@ -13,11 +13,11 @@ library(tidyverse)
 
 #' Connect to the SECDB database - for testing code only
 #' 
-base_dir <- here::here("")
-db_file <- fs::path(base_dir, "SECDB")
-if(dbCanConnect(RSQLite::SQLite(), db_file)) {
-    secdb <- dbConnect(RSQLite::SQLite(), db_file)
-}
+#' base_dir <- here::here("")
+#' db_file <- fs::path(base_dir, "SECDB")
+#' if(dbCanConnect(RSQLite::SQLite(), db_file)) {
+#'     secdb <- dbConnect(RSQLite::SQLite(), db_file)
+#' }
 
 #' Basic SELECT statement wrapper returning results in a tibble
 #' 
@@ -130,10 +130,10 @@ db_get_adjusted_price_by_symbol <- function(con, symbol) {
 }
 
 db_get_gics_matrix <- function(con) {
-    sql <- "SELECT  sct.code AS sct_code,
-                    igp.code AS igp_code,
-                    ind.code AS ind_code,
-                    sub.code AS sub_code,
+    sql <- "SELECT  sct.code AS sector_code,
+                    igp.code AS industry_group_code,
+                    ind.code AS industry_code,
+                    sub.code AS sub_industry_code,
                     sct.name AS sector,
                     igp.name AS industry_group,
                     ind.name AS industry,
@@ -146,18 +146,21 @@ db_get_gics_matrix <- function(con) {
               AND   SCT.code  = SUBSTR(SUB.code,1,2)
               AND   IGP.code  = SUBSTR(SUB.code,1,4)
               AND   IND.code  = SUBSTR(SUB.code,1,6)
-            ORDER BY sub_code;"
+            ORDER BY sub_industry_code;"
     db_select_data(con, sql)
 }
 
+#' Holder over function from Citi, Putnam, CRC where we defined peer groups as GICS industry_group
+#' except for Energy (10) and Materials (15) where we used GICS industry because there is no differentiation
+#' for these two groups at the industry_group level - i.e., they are still Energy and Materials, respectively.
+#' 
 db_get_peer_group <- function(con) {
     db_get_gics_matrix(con) %>%
         transmute(
-            code = sub_code,
-            peer_group = ifelse(sct_code <= 15, industry, industry_group)
+            sub_industry_code = sub_industry_code,
+            peer_group = ifelse(sector_code %in% c(10, 15), industry, industry_group)
         )
 }
-    
 
 #' Disconnect from the SECDB database - for testing code only
 #' 
