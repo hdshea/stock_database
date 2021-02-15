@@ -162,6 +162,14 @@ db_get_peer_group <- function(con) {
         )
 }
 
+db_get_peers_by_symbol <- function(con, in.symbol) {
+    db_get_security_current(con) %>% 
+        select(-start_date, -end_date) %>% 
+        left_join(db_get_peer_group(con), by = "sub_industry_code") %>% 
+        filter(peer_group == (.) %>% filter(symbol == in.symbol) %>% pull(peer_group))
+}
+
+
 #' Disconnect from the SECDB database - for testing code only
 #' 
 # dbDisconnect(secdb)
