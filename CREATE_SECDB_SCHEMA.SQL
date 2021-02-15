@@ -1,5 +1,3 @@
--- !preview conn=DBI::dbConnect(RSQLite::SQLite())
-
 .print "Creating SECDB schema objects..."
 
 -- universe table - defines universes of securities
@@ -55,6 +53,41 @@ CREATE TABLE IF NOT EXISTS security_price
 );
 CREATE INDEX IF NOT EXISTS security_price_effective_date
 ON security_price ( effective_date );
+CREATE INDEX IF NOT EXISTS security_price_uid
+ON security_price ( uid );
+
+-- factor table - defines factors collected for securities
+CREATE TABLE IF NOT EXISTS factor
+(
+    uid INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT
+);
+
+-- factor_data table - contains raw and scored factor data as of the effective_date for securities
+CREATE TABLE IF NOT EXISTS factor_data
+(
+    factor_uid INTEGER NOT NULL,
+    security_uid INTEGER NOT NULL,
+    effective_date DATE NOT NULL,
+    raw_value DOUBLE,
+    score DOUBLE,
+    PRIMARY KEY(factor_uid, security_uid, effective_date),
+    FOREIGN KEY(factor_uid) REFERENCES factor(uid),
+    FOREIGN KEY(security_uid) REFERENCES security(uid)
+);
+
+-- universe_constituent table - defines the elements (securities) of the universe as they may change through time
+CREATE TABLE IF NOT EXISTS universe_constituent
+(
+    universe_uid INTEGER NOT NULL,
+    security_uid INTEGER NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    PRIMARY KEY(universe_uid, security_uid, start_date),
+    FOREIGN KEY(universe_uid) REFERENCES universe(uid),
+    FOREIGN KEY(security_uid) REFERENCES security(uid)
+);
 
 -- adjusted price view - enforces calculation of adjusted_price and adjusted_price_pret
 CREATE VIEW adjusted_price
@@ -69,17 +102,5 @@ SELECT  uid,
         price_return,
         total_return
 FROM    security_price;
-
--- universe_constituent table - defines the elements (securities) of the universe as they may change through time
-CREATE TABLE IF NOT EXISTS universe_constituent
-(
-    universe_uid INTEGER NOT NULL,
-    security_uid INTEGER NOT NULL,
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
-    PRIMARY KEY(universe_uid, security_uid, start_date),
-    FOREIGN KEY(universe_uid) REFERENCES universe(uid),
-    FOREIGN KEY(security_uid) REFERENCES security(uid)
-);
 
 .exit

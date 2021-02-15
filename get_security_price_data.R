@@ -25,7 +25,7 @@ if(dbCanConnect(RSQLite::SQLite(), db_file)) {
 #' Basic SELECT statement wrapper returning results in a tibble
 #' 
 dbSelectData <- function( con, select_statement ) {
-    res <- dbSendQuery(con, sql)
+    res <- dbSendQuery(con, select_statement)
     rval <- tibble::tibble(dbFetch(res))
     dbClearResult(res)
     rm(res)
