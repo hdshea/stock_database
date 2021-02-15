@@ -9,8 +9,16 @@
 library(DBI)
 library(RSQLite)
 library(tidyverse)
-library(tidyquant)  # for quant work and security data access
+library(tidyquant)
 #+
+
+#' Connect to the SECDB database
+#' 
+base_dir <- here::here("")
+db_file <- fs::path(base_dir, "SECDB")
+if(dbCanConnect(RSQLite::SQLite(), db_file)) {
+    secdb <- dbConnect(RSQLite::SQLite(), db_file)
+}
 
 #' tq_index() returns the stock symbol, company name, weight, and sector of every stock in an index. The source is www.ssga.com.
 #' 
@@ -47,3 +55,9 @@ library(tidyquant)  # for quant work and security data access
 #'tq_repeat_df is a simple function that repeats a data frame n times row-wise (long-wise), and adds a new column for a portfolio index. The function is used to assist in Multiple Portfolio analyses, and is a useful precursor to tq_portfolio.
 #'
 
+tq_get("ENEL-MI", from = "2020-12-31", to = "2021-01-31")
+
+
+#' Wrap up by disconnecting from database
+#' 
+dbDisconnect(secdb)

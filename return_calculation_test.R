@@ -6,9 +6,9 @@
 #' ---
 #'
 #+ r setup, include = FALSE
-library(tidyverse)  # for tidy/dplyr work
-library(rvest)      # for web-scraping
-library(tidyquant)  # for quant work and security data access
+library(tidyverse)
+library(rvest)
+library(tidyquant)
 #+
 
 #' ## AAPL as our example case
