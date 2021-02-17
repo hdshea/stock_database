@@ -1,0 +1,58 @@
+---
+title: 'Peer Group Analyses'
+output:
+    github_document: default
+---
+
+```{r setup, include = FALSE}
+library(DBI)
+library(RSQLite)
+library(tidyverse)
+library(lubridate)
+
+base_dir <- here::here("")
+db_file <- fs::path(base_dir, "SECDB")
+if(dbCanConnect(RSQLite::SQLite(), db_file)) {
+    secdb <- dbConnect(RSQLite::SQLite(), db_file)
+}
+source(fs::path(base_dir, "database_functions.R"))
+
+knitr::opts_chunk$set(
+    connection = "secdb", # automatically uses this connection in sql chunks 
+    comment = "#>", 
+    collapse = TRUE, 
+    message = FALSE,
+    fig.width = 8,
+    fig.asp = ((1 + sqrt(5)) / 2) - 1, # the golden ratio - technically, the b proportion of a+b when a is 1
+    out.width = "70%",
+    fig.align = "center"
+)
+```
+
+```{r base_data, echo = FALSE}
+# set the symbol of the stock in the peer group that you want to highlight
+sym <- "CLX"
+# set the start date for the analysis period
+sd <- "2018-12-31"
+
+peers <- db_get_peers_by_symbol(secdb, sym)
+
+peers_data <- db_get_peers_adjusted_price_by_symbol(secdb, sym, from = sd) %>%
+    select(uid, effective_date, adjusted_price, total_return) %>% 
+    group_by(uid) %>% 
+    mutate( tret_idx = adjusted_price / first(adjusted_price) ) %>% 
+    ungroup() %>%
+    left_join(peers, by = "uid")
+
+ylim <- round(max(abs(min(peers_data$tret_idx)-1),abs(max(peers_data$tret_idx)-1))*1.05,2)
+xlim <- ymd(sd)
+```
+
+```{r plot_tret_index, echo = FALSE}
+peers_data %>% 
+    ggplot(aes(ymd(effective_date), tret_idx, group = symbol)) +
+    geom_line(aes(color = symbol)) +
+    scale_x_date("Effective Date", limits = c(xlim, NA), date_breaks = "3 months", date_labels = "%b %y") +
+    scale_y_continuous("Total Return Index", limits = c(max(1-ylim,0), 1+ylim)) +
+    geom_hline(yintercept = 1, color = "black", size = 1, alpha = 1/3)
+```

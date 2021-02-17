@@ -169,6 +169,30 @@ db_get_peers_by_symbol <- function(con, in.symbol) {
         filter(peer_group == (.) %>% filter(symbol == in.symbol) %>% pull(peer_group))
 }
 
+#' Get stock price data for a peer group identified by the symbol of a stock in the group.
+#' Optional from and to date parameters can qualify the time frame.
+#' 
+db_get_peers_adjusted_price_by_symbol <- function(con, in.symbol, from = NULL, to = NULL) {
+    uid_clause <- str_c("WHERE UID IN (",
+                        str_c(db_get_peers_by_symbol(con,in.symbol) %>% pull(uid), collapse=","),
+                        ")", sep="")
+    sd_clause <- NULL
+    ed_clause <- NULL
+    if(!is.null(from)) {
+        sd_clause <- str_c("AND effective_date >= '", from, "'", sep = "")
+    }
+    if(!is.null(to)) {
+        ed_clause <- str_c("AND effective_date >= '", to, "'", sep = "")
+    }
+
+    sql <- str_c("SELECT * FROM adjusted_price",
+                 uid_clause,
+                 sd_clause,
+                 ed_clause,
+                 sep = "\n")
+    
+    db_select_data(con,sql)
+}
 
 #' Disconnect from the SECDB database - for testing code only
 #' 
