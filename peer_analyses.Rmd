@@ -44,15 +44,41 @@ peers_data <- db_get_peers_adjusted_price_by_symbol(secdb, sym, from = sd) %>%
     ungroup() %>%
     left_join(peers, by = "uid")
 
+peers_mean <- peers_data %>% 
+    group_by(effective_date) %>% 
+    summarise(
+        total_return = mean(total_return)
+    ) %>% 
+    mutate(
+        tret_idx = ifelse(effective_date == first(effective_date), 1.0, 1 + (total_return / 100)),
+        tret_idx = cumprod(tret_idx),
+        symbol = "Grp Avg"
+    )
+
+target_data <- peers_data %>% filter(symbol == sym)
+other_peers_data <- peers_data %>% filter(symbol != sym)
+
 ylim <- round(max(abs(min(peers_data$tret_idx)-1),abs(max(peers_data$tret_idx)-1))*1.05,2)
 xlim <- ymd(sd)
+
+tgt_name <- peers %>% filter(symbol == sym) %>% pull(name)
 ```
 
 ```{r plot_tret_index, echo = FALSE}
-peers_data %>% 
+other_peers_data %>% 
     ggplot(aes(ymd(effective_date), tret_idx, group = symbol)) +
-    geom_line(aes(color = symbol)) +
-    scale_x_date("Effective Date", limits = c(xlim, NA), date_breaks = "3 months", date_labels = "%b %y") +
-    scale_y_continuous("Total Return Index", limits = c(max(1-ylim,0), 1+ylim)) +
-    geom_hline(yintercept = 1, color = "black", size = 1, alpha = 1/3)
+    geom_line(aes(color = symbol), alpha = 0.5) +
+    scale_x_date(limits = c(xlim, NA), date_breaks = "3 months", date_labels = "%b %y") +
+    scale_y_continuous(limits = c(max(1-ylim,0), 1+ylim)) +
+    geom_hline(yintercept = 1, color = "black", size = 1, alpha = 1/3) +
+    geom_line(data = target_data, mapping = aes(ymd(effective_date), tret_idx), color = "dark red") +
+    geom_line(data = peers_mean, mapping = aes(ymd(effective_date), tret_idx), color = "black") + 
+    labs(
+        title = "Peer Group Total Return",
+        subtitle = str_c(tgt_name, "and other stocks from peer group", sep = " "),
+        color = "Other Peers",
+        y = "Total Return Index",
+        x = "",
+        caption = str_c("Highlighted:",tgt_name, "in dark red; peer group average in black.", sep = " ")
+    )
 ```

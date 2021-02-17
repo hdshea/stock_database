@@ -71,6 +71,54 @@ sp500_tbl <- read_html(sp500_url) %>%
         sub_industry_code = sub_industry_code
     )
 
+#
+#  https://robotwealth.com/how-to-get-historical-spx-constituents-data-for-free/
+#
+#  we don't need the full methodology from this site because we don't really need to 
+#  know the constituents of the SP500 - we really want a representative history of 
+#  US listed larger stocks - the ticker list will help with this and with removing 
+#  the backward looking bias caused by casting current SP500 constituents back in
+#  time.
+#
+
+spxchanges <- read_html(sp500_url) %>%
+    html_element("#changes") %>%
+    html_table() %>%
+    janitor::clean_names() %>%
+    filter(row_number() > 1) %>%
+    transmute(
+        effective_date = mdy(date),
+        symbol_add = added,
+        name_add = added_2,
+        symbol_rem = removed,
+        name_rem = removed_2,
+        reason = reason
+    )
+
+spx_add <- spxchanges %>%
+    filter(symbol_add != "") %>% 
+    transmute(symbol = symbol_add) %>% 
+    filter(!(symbol %in% (sp500_tbl %>% pull(symbol))))
+
+spx_rem <- spxchanges %>%
+    filter(symbol_rem != "") %>% 
+    transmute(symbol = symbol_rem) %>% 
+    filter(!(symbol %in% (sp500_tbl %>% pull(symbol)))) %>% 
+    filter(!(symbol %in% (spx_add %>% pull(symbol))))
+
+older_sp500_tbl <- union(spx_add,spx_rem) %>% 
+    transmute(
+        uid = 1:n_distinct(symbol),
+        uid = uid + pull(count(sp500_tbl)),
+        start_date = str_c(today(tz="UTC")),
+        end_date = "9999-12-31",
+        symbol = symbol,
+        name = "temp name",
+        sub_industry_code = NA_integer_
+    )
+
+sp500_tbl <- union(sp500_tbl, older_sp500_tbl)
+
 # data for DJIA constituent table
 djia_tbl <- read_html(djia_url) %>%
     html_element("#constituents") %>%
@@ -92,3 +140,5 @@ djia_tbl <- read_html(djia_url) %>%
         sub_industry_code = sub_industry_code.y
     )
 
+# cleanup temp storage
+rm(gics_tbl, spxchanges, spx_add, spx_rem, older_sp500_tbl)
