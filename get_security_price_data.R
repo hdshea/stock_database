@@ -9,7 +9,7 @@
 library(DBI)
 library(RSQLite)
 library(tidyverse)
-library(tidyquant)  # for quant work and security data access
+library(tidyquant)
 #+
 
 #' Connect to the SECDB database
@@ -19,39 +19,26 @@ db_file <- fs::path(base_dir, "SECDB")
 if(dbCanConnect(RSQLite::SQLite(), db_file)) {
     secdb <- dbConnect(RSQLite::SQLite(), db_file)
 }
-
-#' These functions will be moved into a library .R file as we build them up
-#' 
-#' Basic SELECT statement wrapper returning results in a tibble
-#' 
-dbSelectData <- function( con, select_statement ) {
-    res <- dbSendQuery(con, select_statement)
-    rval <- tibble::tibble(dbFetch(res))
-    dbClearResult(res)
-    rm(res)
-    rval
-}
+source(fs::path(base_dir, "database_functions.R"))
 
 #' SELECT all security data from SECDB
 #' 
-#' This currently pulls data for the 500+ stocks in the SP500 and DJIA.
+#' This currently pulls data for the 1500+ stocks in the SP1500.
 #' Executing this notebook assumes that you have a POWER license for tiingo with 
 #' the ability to access this much data in a single pass.
 #' 
-sql <- "SELECT  uid,
-        symbol,
-        name
-FROM    security
-WHERE   start_date <= DATE('now')
-  AND   end_date > DATE('now')"
-all_stocks <- dbSelectData(secdb, sql)
+#' Note the following call assumes that the security table is newly initialized
+#' and specifically that ALL securities are "current".  There will be different 
+#' update procedures for getting pricing data on an on-going basis.
+#' 
+all_stocks <- db_get_security_current(secdb)
 
 symbols <- all_stocks %>% 
     pull( symbol ) %>% 
-    str_replace("\\.", "\\-" ) # wiki has B share tickers in this form stk.B, tiingo wants them in this for stk-B
+    str_replace("\\.", "\\-" ) # wiki has B share tickers in this form stk.B, tiingo wants them in this form stk-B
 
-pricing_table <- tq_get(symbols, get = "tiingo", from = "1998-12-31", to = "2021-01-31") %>% 
-  mutate( symbol = str_replace(symbol, "\\-", "\\." ) )
+pricing_table <- tq_get(symbols, get = "tiingo", from = "1998-12-31", to = "2021-02-18") %>% 
+  mutate( symbol = str_replace(symbol, "\\-", "\\.") )
 
 write_csv(pricing_table, fs::path(base_dir, "data", "pricing_table.csv"))
 

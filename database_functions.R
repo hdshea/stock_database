@@ -13,11 +13,11 @@ library(tidyverse)
 
 #' Connect to the SECDB database - for testing code only
 #' 
-#' base_dir <- here::here("")
-#' db_file <- fs::path(base_dir, "SECDB")
-#' if(dbCanConnect(RSQLite::SQLite(), db_file)) {
-#'     secdb <- dbConnect(RSQLite::SQLite(), db_file)
-#' }
+base_dir <- here::here("")
+db_file <- fs::path(base_dir, "SECDB")
+if(dbCanConnect(RSQLite::SQLite(), db_file)) {
+ secdb <- dbConnect(RSQLite::SQLite(), db_file)
+}
 
 #' Basic SELECT statement wrapper returning results in a tibble
 #' 
@@ -150,7 +150,7 @@ db_get_gics_matrix <- function(con) {
     db_select_data(con, sql)
 }
 
-#' Holder over function from Citi, Putnam, CRC where we defined peer groups as GICS industry_group
+#' Hold over function from Citi, Putnam, CRC where we defined peer groups as GICS industry_group
 #' except for Energy (10) and Materials (15) where we used GICS industry because there is no differentiation
 #' for these two groups at the industry_group level - i.e., they are still Energy and Materials, respectively.
 #' 

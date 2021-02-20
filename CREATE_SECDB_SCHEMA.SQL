@@ -1,15 +1,5 @@
 .print "Creating SECDB schema objects..."
 
--- universe table - defines universes of securities
-CREATE TABLE IF NOT EXISTS universe
-(
-    uid INTEGER PRIMARY KEY,
-    name TEXT NOT NULL,
-    description TEXT
-);
-CREATE UNIQUE INDEX IF NOT EXISTS universe_name
-ON universe ( name );
-
 -- gics table - defines sector, industry group, industry and sub-industry classifications supplied by GICS
 CREATE TABLE IF NOT EXISTS gics
 (
@@ -72,20 +62,9 @@ CREATE TABLE IF NOT EXISTS factor_data
     effective_date DATE NOT NULL,
     raw_value DOUBLE,
     score DOUBLE,
+    rank INTEGER,
     PRIMARY KEY(factor_uid, security_uid, effective_date),
     FOREIGN KEY(factor_uid) REFERENCES factor(uid),
-    FOREIGN KEY(security_uid) REFERENCES security(uid)
-);
-
--- universe_constituent table - defines the elements (securities) of the universe as they may change through time
-CREATE TABLE IF NOT EXISTS universe_constituent
-(
-    universe_uid INTEGER NOT NULL,
-    security_uid INTEGER NOT NULL,
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
-    PRIMARY KEY(universe_uid, security_uid, start_date),
-    FOREIGN KEY(universe_uid) REFERENCES universe(uid),
     FOREIGN KEY(security_uid) REFERENCES security(uid)
 );
 
