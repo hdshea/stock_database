@@ -48,7 +48,7 @@ write_csv(pricing_table, fs::path(base_dir, "data", "pricing_table.csv"))
 
 #' Now create the data structure to populate security_price
 #' 
-adJ_pricing_table <- pricing_table %>% 
+adj_pricing_table <- pricing_table %>% 
   left_join(all_stocks, by = "symbol") %>% 
   select(uid, date, close, volume, divCash, splitFactor, adjusted) %>% 
   group_by(uid) %>% 
@@ -82,7 +82,7 @@ adJ_pricing_table <- pricing_table %>%
   ) %>% 
   ungroup()
 
-write_csv(adJ_pricing_table, fs::path(base_dir, "data", "adj_pricing_table.csv"))
+write_csv(adj_pricing_table, fs::path(base_dir, "data", "adj_pricing_table.csv"))
 
 #' Saving all of the the adjusted data to a data file for later use if necessary just for convenience.
 #' Even though the adjustment calculations on 20+ years of >500 securities are pretty fast.
@@ -94,7 +94,7 @@ write_csv(adJ_pricing_table, fs::path(base_dir, "data", "adj_pricing_table.csv")
 #' Also note the conversion of the dttm formatted date field to the character formatted effective_date field.  SQLite does some
 #' odd conversion on dttm formats.
 #' 
-dbAppendTable(secdb, "security_price", adJ_pricing_table)
+dbAppendTable(secdb, "security_price", adj_pricing_table)
 
 #' Wrap up by disconnecting from database
 #' 
