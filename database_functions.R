@@ -32,7 +32,8 @@ db_select_data <- function(con, select_statement ) {
 #' Simple generic SELECT from base tables
 #' 
 db_get_from_table <- function(con, table, where = NULL) {
-    db_select_data(con, str_c("SELECT * FROM", table, where, sep = " ") )
+    db_select_data(con, str_c("SELECT * FROM", table, where, sep = " ") ) %>%
+        mutate(across(contains("date"), as.Date))
 }
 
 #' Simple table specific SELECTs from base tables - some with common WHERE clause components
