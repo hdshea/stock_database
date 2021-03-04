@@ -13,17 +13,18 @@ library(tidyverse)
 
 #' Connect to the SECDB database - for testing code only
 #' 
-base_dir <- here::here("")
-db_file <- fs::path(base_dir, "SECDB")
-if(dbCanConnect(RSQLite::SQLite(), db_file)) {
- secdb <- dbConnect(RSQLite::SQLite(), db_file)
-}
+# base_dir <- here::here("")
+# db_file <- fs::path(base_dir, "SECDB")
+# if(dbCanConnect(RSQLite::SQLite(), db_file)) {
+#     secdb <- dbConnect(RSQLite::SQLite(), db_file)
+# }
 
 #' Basic SELECT statement wrapper returning results in a tibble
 #' 
 db_select_data <- function(con, select_statement ) {
     res <- dbSendQuery(con, select_statement)
-    rval <- tibble::tibble(dbFetch(res))
+    rval <- tibble::tibble(dbFetch(res)) %>%
+        mutate(across(contains("_date"), as.Date))
     dbClearResult(res)
     rm(res)
     rval
