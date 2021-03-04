@@ -167,7 +167,7 @@ db_get_peers_by_symbol <- function(con, in.symbol) {
     db_get_security_current(con) %>% 
         select(-start_date, -end_date) %>% 
         left_join(db_get_peer_group(con), by = "sub_industry_code") %>% 
-        filter(peer_group == (.) %>% filter(symbol == in.symbol) %>% pull(peer_group))
+        filter(peer_group == ((.) %>% filter(symbol == in.symbol) %>% pull(peer_group)))
 }
 
 #' Get stock price data for a peer group identified by the symbol of a stock in the group.
@@ -183,7 +183,7 @@ db_get_peers_adjusted_price_by_symbol <- function(con, in.symbol, from = NULL, t
         sd_clause <- str_c("AND effective_date >= '", from, "'", sep = "")
     }
     if(!is.null(to)) {
-        ed_clause <- str_c("AND effective_date >= '", to, "'", sep = "")
+        ed_clause <- str_c("AND effective_date <= '", to, "'", sep = "")
     }
 
     sql <- str_c("SELECT * FROM adjusted_price",
