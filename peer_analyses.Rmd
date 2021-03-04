@@ -31,11 +31,12 @@ knitr::opts_chunk$set(
 
 ```{r base_data, echo = FALSE}
 # set the symbol of the stock in the peer group that you want to highlight
-sym <- "CLX"
+sym <- "ELF"
 # set the start date for the analysis period
 sd <- "2018-12-31"
 
 peers <- db_get_peers_by_symbol(secdb, sym)
+peer_group_name <- peers$peer_group[[1]]
 
 peers_data <- db_get_peers_adjusted_price_by_symbol(secdb, sym, from = sd) %>%
     select(uid, effective_date, adjusted_price, total_return) %>% 
@@ -64,6 +65,7 @@ xlim <- ymd(sd)
 tgt_name <- peers %>% filter(symbol == sym) %>% pull(name)
 ```
 
+### Peer Group Graph
 ```{r plot_tret_index, echo = FALSE}
 other_peers_data %>% 
     ggplot(aes(ymd(effective_date), tret_idx, group = symbol)) +
@@ -74,11 +76,25 @@ other_peers_data %>%
     geom_line(data = target_data, mapping = aes(ymd(effective_date), tret_idx), color = "dark red") +
     geom_line(data = peers_mean, mapping = aes(ymd(effective_date), tret_idx), color = "black") + 
     labs(
-        title = "Peer Group Total Return",
+        title = str_c("Total Return Graph -", peer_group_name, "Peer Group", sep = " "),
         subtitle = str_c(tgt_name, "and other stocks from peer group", sep = " "),
         color = "Other Peers",
         y = "Total Return Index",
         x = "",
         caption = str_c("Highlighted:",tgt_name, "in dark red; peer group average in black.", sep = " ")
     )
+```
+
+### Peer Group Table
+```{r peers_table, echo = FALSE}
+peers_tret <- peers_data %>% 
+    group_by(uid) %>% 
+    summarise( total_return = round((100 * (last(tret_idx) - 1)), 2) ) %>%
+    select(uid, total_return)
+
+peers %>% 
+    left_join(peers_tret, by = "uid") %>% 
+    arrange(desc(total_return)) %>% 
+    select(-uid, -sub_industry_code, -peer_group) %>% 
+    knitr::kable(label = peer_group_name)
 ```
